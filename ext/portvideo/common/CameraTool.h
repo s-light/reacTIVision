@@ -19,6 +19,8 @@
 #ifndef CAMERATOOL_H
 #define CAMERATOOL_H
 
+#include "MultiCamera.h"
+
 #ifdef WIN32
 #include <windows.h>
 #include "videoInputCamera.h"
@@ -70,6 +72,9 @@ public:
     
     static void initCameraConfig(CameraConfig *cfg);
 	static void setCameraConfig(CameraConfig *cfg);
+    
+    static void whereIsConfig(const char* const cfgfilename, char* cfgfile);
+    static int mapCameraDriver(const char* const driver);
     
 private:
     

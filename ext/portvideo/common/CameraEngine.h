@@ -89,6 +89,7 @@ extern const char* dstr[];
 #define DRIVER_UVCCAM   4
 #define DRIVER_FILE    10
 #define DRIVER_FOLDER  11
+#define DRIVER_MUTLICAM 12
 
 #define VALUE_INCREASE   79
 #define VALUE_DECREASE   80
@@ -99,7 +100,7 @@ enum CameraSetting { BRIGHTNESS, CONTRAST, SHARPNESS, AUTO_GAIN, GAIN, AUTO_EXPO
 
 struct CameraConfig {
 
-    char path[256];
+    char path[1024];
 
     int driver;
     int device;
@@ -184,7 +185,7 @@ public:
     virtual bool closeCamera() = 0;
     virtual bool stillRunning() = 0;
 
-    void printInfo();
+    virtual void printInfo();
     static void setMinMaxConfig(CameraConfig *cam_cfg, std::vector<CameraConfig> cfg_list);
 
     virtual int getCameraSettingStep(int mode) = 0;

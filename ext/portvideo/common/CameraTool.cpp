@@ -205,6 +205,11 @@ CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg) {
 	
 	CameraEngine* camera = NULL;
 	int dev_count;
+    
+    if (cam_cfg->driver==DRIVER_MUTLICAM) {
+		camera = MultiCamera::getCamera(cam_cfg);
+		if (camera) return camera;
+	}
 	
 #ifndef NDEBUG
 	
@@ -379,34 +384,63 @@ void CameraTool::setCameraConfig(CameraConfig *cfg) {
     cam_cfg.flip_v = cfg->flip_v;
 }
 
+void CameraTool::whereIsConfig(const char* const cfgfilename, char* cfgfile) {
+    
+#ifdef __APPLE__
+    char path[1024];
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
+    CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
+    CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
+    CFRelease( mainBundleURL);
+    CFRelease( cfStringRef);
+    sprintf(cfgfile,"%s/Contents/Resources/%s", path, cfgfilename);
+#elif !defined WIN32    
+    sprintf(cfgfile, "./%s", cfgfilename);
+    if(access(cfgfile, F_OK) == 0) return;
+    
+    sprintf(cfgfile, "/usr/share/portvideo/%s", cfgfilename);
+    if(access(cfgfile, F_OK) == 0) return;
+    
+    sprintf(cfgfile, "/usr/local/share/portvideo/%s", cfgfilename);
+    if(access(cfgfile, F_OK) == 0) return;
+    
+    sprintf(cfgfile, "/opt/share/portvideo/%s", cfgfilename);
+    if(access(cfgfile, F_OK) == 0) return;
+
+	sprintf(cfgfile, "/opt/local/share/portvideo/%s", cfgfilename);
+	if(access(cfgfile, F_OK) == 0) return;
+
+    *cfgfile = '\0';
+#else
+    sprintf(cfgfile, "./%s", cfgfilename);
+#endif
+}
+
+int CameraTool::mapCameraDriver(const char* const driver) {    
+    
+    if(driver == NULL) return DRIVER_DEFAULT;
+    
+    
+    if(strcmp(driver, "dc1394" ) == 0) return DRIVER_DC1394;
+    else if(strcmp(driver, "ps3eye" ) == 0) return DRIVER_PS3EYE;
+    else if(strcmp(driver, "file" ) == 0) return DRIVER_FILE;
+    else if(strcmp(driver, "folder" ) == 0) return DRIVER_FOLDER;
+    else if(strcmp(driver, "multicam") == 0) return DRIVER_MUTLICAM;
+    return DRIVER_DEFAULT;
+}
+
 CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 
 	char path[1024];
 	initCameraConfig(&cam_cfg);
 	if (strcmp( cfgfile, "default" ) == 0) {
-#ifdef __APPLE__
-		CFBundleRef mainBundle = CFBundleGetMainBundle();
-		CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
-		CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
-		CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
-		CFRelease( mainBundleURL);
-		CFRelease( cfStringRef);
-		sprintf(cam_cfg.path,"%s/Contents/Resources/camera.xml",path);
-#elif defined LINUX
-		struct passwd *pw = getpwuid(getuid());
-		sprintf(path,"%s/.portvideo/camera.xml",pw->pw_dir);
-
-		sprintf(cam_cfg.path,"./camera.xml");
-		if (access (cam_cfg.path, F_OK )!=0) sprintf(cam_cfg.path,"%s",path);
-		if (access (cam_cfg.path, F_OK )!=0) sprintf(cam_cfg.path,"/usr/share/portvideo/camera.xml");
-		if (access (cam_cfg.path, F_OK )!=0) sprintf(cam_cfg.path,"/usr/local/share/portvideo/camera.xml");
-		if (access (cam_cfg.path, F_OK )!=0) sprintf(cam_cfg.path,"/opt/share/portvideo/camera.xml");
-		if (access (cam_cfg.path, F_OK )!=0) sprintf(cam_cfg.path,"/opt/local/share/portvideo/camera.xml");
-#else
-		sprintf(cam_cfg.path,"./camera.xml");
-#endif
-	} else sprintf(cam_cfg.path,"%s",cfgfile);
+        whereIsConfig("camera.xml", cam_cfg.path);
+        cfgfile = cam_cfg.path;
+    }else
+        sprintf(cam_cfg.path,"%s",cfgfile);
 	
+
 	tinyxml2::XMLDocument xml_settings;
 	xml_settings.LoadFile(cam_cfg.path);
 	if( xml_settings.Error() )
@@ -425,12 +459,8 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 		return &cam_cfg;
 	}
 	
-	if(camera_element->Attribute("driver")!=NULL) {
-		if (strcmp(camera_element->Attribute("driver"), "dc1394" ) == 0) cam_cfg.driver=DRIVER_DC1394;
-		else if (strcmp(camera_element->Attribute("driver"), "ps3eye" ) == 0) cam_cfg.driver=DRIVER_PS3EYE;
-		else if (strcmp(camera_element->Attribute("driver"), "file" ) == 0) cam_cfg.driver=DRIVER_FILE;
-		else if (strcmp(camera_element->Attribute("driver"), "folder" ) == 0) cam_cfg.driver=DRIVER_FOLDER;
-	}
+    const char* driver = camera_element->Attribute("driver");
+    cam_cfg.driver = mapCameraDriver(driver);
 	
 	if(camera_element->Attribute("id")!=NULL) {
 		if (strcmp(camera_element->Attribute("id"), "auto" ) == 0) cam_cfg.device=SETTING_AUTO;
