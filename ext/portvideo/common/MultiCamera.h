@@ -80,43 +80,19 @@ public:
 	bool resetCamera();
     void printInfo();
     
-	int getCameraSettingStep(int mode) { 
-        return 0; 
-    }
-	bool setCameraSettingAuto(int mode, bool flag) { 
-        return false; 
-    }
-	bool getCameraSettingAuto(int mode) { 
-        return false; 
-    }
-	bool setCameraSetting(int mode, int value) { 
-        return false; 
-    }
-	int getCameraSetting(int mode) { 
-        return 0; 
-    }
-	int getMaxCameraSetting(int mode) { 
-        return 0; 
-    }
-	int getMinCameraSetting(int mode) { 
-        return 0; 
-    }
-	bool setDefaultCameraSetting(int mode) { 
-        return false;
-    }
-	int getDefaultCameraSetting(int mode) { 
-        return 0; 
-    }
-	bool hasCameraSetting(int mode) { 
-        return false; 
-    }
-	bool hasCameraSettingAuto(int mode) { 
-        return false; 
-    }
-	
-	bool showSettingsDialog(bool lock) { return lock; }
-	void control(unsigned char key) {};
+	int getCameraSettingStep(int mode);
+	int getCameraSetting(int mode);
+	int getMaxCameraSetting(int mode);
+	int getMinCameraSetting(int mode);
+    bool getCameraSettingAuto(int mode);
+    int getDefaultCameraSetting(int mode);
+	bool hasCameraSetting(int mode);
+	bool hasCameraSettingAuto(int mode);
     
+	bool setCameraSettingAuto(int mode, bool flag);
+	bool setCameraSetting(int mode, int value);
+	bool setDefaultCameraSetting(int mode);
+
 private:
     std::vector<MultiCamConfig> cam_config_;
     std::vector<CameraEngine*> cameras_;

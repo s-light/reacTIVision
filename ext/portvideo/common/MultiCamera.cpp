@@ -30,6 +30,7 @@ MultiCamConfig::MultiCamConfig()
     frame_yoff = 0;
     grid_col = 0;
     grid_row = 0;
+    CameraTool::initCameraConfig(&child_cam_config_);
 }
 
 std::vector<MultiCamConfig> MultiCamConfig::readConfig(const char* const cam_cfg_file)
@@ -51,10 +52,10 @@ std::vector<MultiCamConfig> MultiCamConfig::readConfig(const char* const cam_cfg
     while(camera_element != NULL)
     {
         MultiCamConfig cfg;
-        
+
         const char* driver = camera_element->Attribute("driver");
         cfg.driver = CameraTool::mapCameraDriver(driver);
-        
+
         if(camera_element->Attribute("id") != NULL)
             cfg.device = atoi(camera_element->Attribute("id"));        
         
@@ -113,7 +114,6 @@ void MultiCamConfig::writeConfig(std::vector<MultiCamConfig> cam_config, const c
         MultiCamConfig cfg = *iter;
         
         tinyxml2::XMLElement* camera_element = doc.NewElement("camera");
-        
         camera_element->SetAttribute("driver", cfg.driver);
         camera_element->SetAttribute("device", cfg.device);
         
@@ -407,3 +407,38 @@ unsigned char* MultiCamera::getFrame()
     return cam_buffer;
 }
 
+int MultiCamera::getCameraSettingStep(int mode) { return cameras_[0]->getCameraSettingStep(mode); }
+int MultiCamera::getCameraSetting(int mode) { return cameras_[0]->getCameraSetting(mode); }
+int MultiCamera::getMaxCameraSetting(int mode) { return cameras_[0]->getMaxCameraSetting(mode); }
+int MultiCamera::getMinCameraSetting(int mode) { return cameras_[0]->getMinCameraSetting(mode); }
+bool MultiCamera::getCameraSettingAuto(int mode) { return cameras_[0]->getCameraSettingAuto(mode); }
+int MultiCamera::getDefaultCameraSetting(int mode) { return cameras_[0]->getDefaultCameraSetting(mode); }
+bool MultiCamera::hasCameraSetting(int mode) { return cameras_[0]->hasCameraSetting(mode); }
+bool MultiCamera::hasCameraSettingAuto(int mode) { return cameras_[0]->hasCameraSettingAuto(mode); }
+
+bool MultiCamera::setCameraSettingAuto(int mode, bool flag) 
+{
+    bool result = true;
+    std::vector<CameraEngine*>::iterator iter;
+    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
+        result &= (*iter)->setCameraSettingAuto(mode, flag);
+    return result;
+}
+
+bool MultiCamera::setCameraSetting(int mode, int value)
+{ 
+    bool result = true;
+    std::vector<CameraEngine*>::iterator iter;
+    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
+        result &= (*iter)->setCameraSetting(mode, value);
+    return result;
+}
+
+bool MultiCamera::setDefaultCameraSetting(int mode)
+{
+    bool result = true;
+    std::vector<CameraEngine*>::iterator iter;
+    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
+        result &= (*iter)->setDefaultCameraSetting(mode);
+    return result;
+}
