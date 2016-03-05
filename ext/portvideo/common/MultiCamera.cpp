@@ -402,8 +402,9 @@ unsigned char* MultiCamera::getFrame()
         
         unsigned char* buffer_write = childcam_buffer_start;
         unsigned char* child_frame = cam->getFrame();
+        if(child_frame == NULL) return NULL;
         
-        for(int line_nr = 0; line_nr <= cam->getHeight(); line_nr++)
+        for(int line_nr = 1; line_nr <= cam->getHeight(); line_nr++)
         {
             memcpy(buffer_write, child_frame, line_size);
             child_frame += line_size;
