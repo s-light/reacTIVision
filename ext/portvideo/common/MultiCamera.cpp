@@ -221,9 +221,13 @@ bool MultiCamera::checkMultiCamConfig()
     int cols = std::max_element(cam_config_.begin(), cam_config_.end(), MultiCamConfig::compareCol)->grid_col + 1;
     int rows = std::max_element(cam_config_.begin(), cam_config_.end(), MultiCamConfig::compareRow)->grid_row + 1;
     
-    bool cams_exists [cols * rows] = {};
-    int height_per_col[cols] = {};
-    int width_per_row[rows] = {};
+    bool cams_exists[cols * rows];
+    int height_per_col[cols];
+    int width_per_row[rows];
+    
+    memset(cams_exists, 0, sizeof(bool)*cols*rows);
+    memset(height_per_col, 0, sizeof(int)*cols);
+    memset(width_per_row, 0, sizeof(int)*rows);
     
     std::vector<MultiCamConfig>::iterator iter;
     for(iter = cam_config_.begin(); iter != cam_config_.end(); iter++)
@@ -308,7 +312,15 @@ bool MultiCamera::initCamera()
     
     std::vector<CameraEngine*>::iterator iter;
     for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
+    {
+        if((*iter) == NULL)
+        {
+            printf("Multicam: child-cam could not be initialized.");
+            return false;
+        }
+        
         result &= (*iter)->initCamera();
+    }
     
     if(!cam_buffer)
         cam_buffer = new unsigned char[cfg->frame_height * cfg->frame_width * cfg->cam_format];
@@ -322,7 +334,11 @@ bool MultiCamera::closeCamera()
     
     std::vector<CameraEngine*>::iterator iter;
     for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
+    {
+        if((*iter) == NULL) continue;
+        
         result &= (*iter)->closeCamera();
+    }
     
     if(cam_buffer)
     {
