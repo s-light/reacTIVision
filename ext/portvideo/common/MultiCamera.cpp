@@ -30,6 +30,7 @@ MultiCamConfig::MultiCamConfig()
     frame_yoff = 0;
     grid_col = 0;
     grid_row = 0;
+    *filecam_file = '\0';
     CameraTool::initCameraConfig(&child_cam_config_);
 }
 
@@ -57,7 +58,9 @@ std::vector<MultiCamConfig> MultiCamConfig::readConfig(const char* const cam_cfg
         cfg.driver = CameraTool::mapCameraDriver(driver);
 
         if(camera_element->Attribute("id") != NULL)
-            cfg.device = atoi(camera_element->Attribute("id"));        
+            cfg.device = atoi(camera_element->Attribute("id"));    
+        if(cfg.driver == DRIVER_FILE && camera_element->Attribute("file") != NULL)
+            strcpy(cfg.filecam_file, camera_element->Attribute("file"));
         
         tinyxml2::XMLElement* capture_element = camera_element->FirstChildElement("capture");
         if(capture_element != NULL)
@@ -153,6 +156,7 @@ CameraConfig* MultiCamConfig::getChildCameraConfig(CameraConfig* cam_cfg)
     child_cam_config_.frame_height = frame_height;
     child_cam_config_.frame_xoff = frame_xoff;
     child_cam_config_.frame_yoff = frame_yoff;
+    strcpy(child_cam_config_.file, filecam_file);
     
     if(child_cam_config_.driver == DRIVER_MUTLICAM)
         child_cam_config_.driver = DRIVER_DEFAULT;

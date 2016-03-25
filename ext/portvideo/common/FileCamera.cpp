@@ -37,7 +37,12 @@ FileCamera::~FileCamera()
 CameraEngine* FileCamera::getCamera(CameraConfig *cam_cfg) {
 	
 	FILE* imagefile=fopen(cam_cfg->src, "rb");
-	if (imagefile==NULL) return NULL;
+	if (imagefile==NULL)
+    {
+        perror(cam_cfg->src);
+        return NULL;
+    }
+    
 	fclose(imagefile);
 	return new FileCamera(cam_cfg);
 }
@@ -49,30 +54,30 @@ bool FileCamera::initCamera() {
 	char *param;
 	
 	FILE* imagefile=fopen(cfg->src, "r");
-	if (imagefile==NULL) return false;
+	if (imagefile==NULL)
+    {
+        perror(cfg->src);
+        return false;
+    }
 	
-	fgets(header,32,imagefile);
-	while (strstr(header,"#")!=NULL) fgets(header,32,imagefile);
+    readNextPGMLine(header, 32, imagefile);
 	if (strstr(header,"P5")!=NULL) cfg->cam_format = FORMAT_GRAY;
 	else if (strstr(header,"P6")!=NULL) cfg->cam_format = FORMAT_RGB;
 	else return NULL;
 	
-	fgets(header,32,imagefile);
-	while (strstr(header,"#")!=NULL) fgets(header,32,imagefile);
+    readNextPGMLine(header, 32, imagefile);
 	param = strtok(header," "); if (param) cfg->cam_width = atoi(param);
 	param = strtok(NULL," "); if (param) cfg->cam_height =  atoi(param);
 	param = strtok(NULL," "); if (param) max = atoi(param);
 	
 	if (cfg->cam_height==0) 	{
-		fgets(header,32,imagefile);
-		while (strstr(header,"#")!=NULL) fgets(header,32,imagefile);
+        readNextPGMLine(header, 32, imagefile);
 		param = strtok(header," "); if (param) cfg->cam_height = atoi(param);
 		param = strtok(NULL," "); if (param) max = atoi(param);
 	}
 	
 	if (max==0) {
-		fgets(header,32,imagefile);
-		while (strstr(header,"#")!=NULL) fgets(header,32,imagefile);
+        readNextPGMLine(header, 32, imagefile);
 		param = strtok(header," "); if (param) max = atoi(param);
 	}
 	
@@ -97,6 +102,24 @@ bool FileCamera::initCamera() {
 	cfg->cam_fps = 1;
 	setupFrame();
 	return true;
+}
+
+void FileCamera::readNextPGMLine(char* buffer, int length, FILE* file)
+{
+    bool in_comment = false;
+    while(true)
+    {
+        fgets(buffer, 32, file);
+        
+        if(strchr(buffer, '#') != NULL)
+            in_comment = true;
+        
+        if(!in_comment)
+            break;
+        
+        if(buffer[strlen(buffer)-1] == '\n')
+            in_comment = false;   
+    }
 }
 
 unsigned char* FileCamera::getFrame()

@@ -56,6 +56,9 @@ public:
 	
 	bool showSettingsDialog(bool lock) { return lock; }
 	void control(unsigned char key) {};
+    
+private:
+    void readNextPGMLine(char* buffer, int length, FILE* file);
 
 };
 

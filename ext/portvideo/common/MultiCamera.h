@@ -55,6 +55,8 @@ public:
     int grid_row;
     int grid_col;
     
+    char filecam_file[256];
+    
     CameraConfig* getChildCameraConfig(CameraConfig* cam_cfg);
     
 private:
