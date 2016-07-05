@@ -24,7 +24,7 @@
 #include "CameraTool.h"
 #include "tinyxml2.h"
 
-class MultiCamConfig
+class MultiCamConfig : public CameraConfig
 {
 public:
     static std::vector<MultiCamConfig> readConfig(const char* const cam_cfg_file);
@@ -41,23 +41,8 @@ public:
     MultiCamConfig();
     virtual ~MultiCamConfig() { }
     
-    int driver;
-    int device;
-    
-    int capture_width;
-    int capture_height;
-    
-    int frame_width;
-    int frame_height;
-    int frame_xoff;
-    int frame_yoff;
-    
     int grid_row;
     int grid_col;
-    
-    char filecam_file[256];
-    
-    CameraConfig* getChildCameraConfig(CameraConfig* cam_cfg);
     
 private:
     CameraConfig child_cam_config_;
@@ -102,10 +87,6 @@ private:
     int cameras_rows_;
     
     char cam_config_file_[1024];
-    
-    void setupChildCameras();
-    bool checkMultiCamConfig();
-    
 };
 
 #endif	/* MULTICAMERA_H */

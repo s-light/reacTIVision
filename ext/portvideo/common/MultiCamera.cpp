@@ -20,18 +20,7 @@
 
 MultiCamConfig::MultiCamConfig() 
 {
-    driver = DRIVER_DEFAULT;
-    device = 0;
-    capture_width = 0;
-    capture_height = 0;
-    frame_height = 0;
-    frame_width = 0;
-    frame_xoff = 0;
-    frame_yoff = 0;
-    grid_col = 0;
-    grid_row = 0;
-    *filecam_file = '\0';
-    CameraTool::initCameraConfig(&child_cam_config_);
+    CameraTool::initCameraConfig(this);
 }
 
 std::vector<MultiCamConfig> MultiCamConfig::readConfig(const char* const cam_cfg_file)
@@ -53,36 +42,9 @@ std::vector<MultiCamConfig> MultiCamConfig::readConfig(const char* const cam_cfg
     while(camera_element != NULL)
     {
         MultiCamConfig cfg;
-
-        const char* driver = camera_element->Attribute("driver");
-        cfg.driver = CameraTool::mapCameraDriver(driver);
-
-        if(camera_element->Attribute("id") != NULL)
-            cfg.device = atoi(camera_element->Attribute("id"));    
-        if(cfg.driver == DRIVER_FILE && camera_element->Attribute("file") != NULL)
-            strcpy(cfg.filecam_file, camera_element->Attribute("file"));
         
-        tinyxml2::XMLElement* capture_element = camera_element->FirstChildElement("capture");
-        if(capture_element != NULL)
-        {   
-            if(capture_element->Attribute("width") != NULL)
-                cfg.capture_width = atoi(capture_element->Attribute("width"));
-            if(capture_element->Attribute("height") != NULL)
-                cfg.capture_height = atoi(capture_element->Attribute("height"));
-        }
-        
-        tinyxml2::XMLElement* frame_element = camera_element->FirstChildElement("frame");
-        if(frame_element != NULL)
-        {
-            if(frame_element->Attribute("height") != NULL)
-                cfg.frame_height = atoi(frame_element->Attribute("height"));
-            if(frame_element->Attribute("width") != NULL)
-                cfg.frame_width = atoi(frame_element->Attribute("width"));
-            if(frame_element->Attribute("xoff") != NULL)
-                cfg.frame_xoff = atoi(frame_element->Attribute("xoff"));
-            if(frame_element->Attribute("yoff") != NULL)
-                cfg.frame_yoff = atoi(frame_element->Attribute("yoff"));
-        }
+        CameraTool::initCameraConfig(&cfg);
+        CameraTool::readSettings(camera_element, cfg);
         
         tinyxml2::XMLElement* grid_element = camera_element->FirstChildElement("grid");
         if(grid_element != NULL)
@@ -117,22 +79,7 @@ void MultiCamConfig::writeConfig(std::vector<MultiCamConfig> cam_config, const c
         MultiCamConfig cfg = *iter;
         
         tinyxml2::XMLElement* camera_element = doc.NewElement("camera");
-        camera_element->SetAttribute("driver", cfg.driver);
-        camera_element->SetAttribute("device", cfg.device);
-        
-        tinyxml2::XMLElement* capture_element = doc.NewElement("capture");
-        if(cfg.capture_width > 0) capture_element->SetAttribute("width", cfg.capture_width);
-        if(cfg.capture_height > 0) capture_element->SetAttribute("height", cfg.capture_height);
-
-        tinyxml2::XMLElement* frame_element = doc.NewElement("frame");
-        if(cfg.frame_height > 0) frame_element->SetAttribute("height", cfg.frame_height);
-        if(cfg.frame_width > 0) frame_element->SetAttribute("width", cfg.frame_width);
-        if(cfg.frame_xoff > 0) frame_element->SetAttribute("xoff", cfg.frame_xoff);
-        if(cfg.frame_yoff > 0) frame_element->SetAttribute("yoff", cfg.frame_yoff);
-        
-        tinyxml2::XMLElement* gird_element = doc.NewElement("grid");
-        if(cfg.grid_col > 0) gird_element->SetAttribute("col", cfg.grid_col);
-        if(cfg.grid_row > 0) gird_element->SetAttribute("row", cfg.grid_row);
+        CameraTool::saveSettings(cfg, camera_element);
         
         multicam_element->LinkEndChild(camera_element);
     }
@@ -142,38 +89,9 @@ void MultiCamConfig::writeConfig(std::vector<MultiCamConfig> cam_config, const c
         std::cout << "Error saving camera configuration file: " << cam_cfg_file << std::endl;
 }
 
-CameraConfig* MultiCamConfig::getChildCameraConfig(CameraConfig* cam_cfg)
-{
-    //take global camera config and override with per cam settings in multicam.xml
-    
-    child_cam_config_ = *cam_cfg;
-    child_cam_config_.driver = driver;
-    child_cam_config_.device = device;
-    child_cam_config_.cam_width = capture_width;
-    child_cam_config_.cam_height = capture_height;
-    child_cam_config_.frame = true;
-    child_cam_config_.frame_width = frame_width;
-    child_cam_config_.frame_height = frame_height;
-    child_cam_config_.frame_xoff = frame_xoff;
-    child_cam_config_.frame_yoff = frame_yoff;
-    strcpy(child_cam_config_.file, filecam_file);
-    
-    if(child_cam_config_.driver == DRIVER_MUTLICAM)
-        child_cam_config_.driver = DRIVER_DEFAULT;
-    
-    return &child_cam_config_;
-}
-
 CameraEngine* MultiCamera::getCamera(CameraConfig* cam_cfg)
 {
     MultiCamera *cam = new MultiCamera(cam_cfg);
-    if(!cam->checkMultiCamConfig())
-    {
-        delete cam;
-        return NULL;
-    }
-    
-    cam->setupChildCameras();
     return cam;
 }
 
@@ -198,23 +116,19 @@ MultiCamera::~MultiCamera() {
     }
 }
 
-void MultiCamera::setupChildCameras()
+void MultiCamera::printInfo()
 {
-    cameras_.resize(cameras_columns_ * cameras_rows_, NULL);
+    printf("Multicam: %i childs\n", (int)cameras_.size());
     
-    std::vector<MultiCamConfig>::iterator iter;
-    for(iter = cam_config_.begin(); iter != cam_config_.end(); iter++)
+    std::vector<CameraEngine*>::iterator iter;
+    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
     {
-        CameraConfig* child_cfg = iter->getChildCameraConfig(this->cfg);
-        //TODO: if the spezified child camera can not be found, the default camera is used.
-        // In doing so CameraTool resets the main camera config
-        CameraEngine* cam = CameraTool::getCamera(child_cfg);
-        int add_cam_at = iter->grid_row * cameras_columns_ + iter->grid_col;
-        cameras_[add_cam_at] = cam;
+        (*iter)->printInfo();
+        printf("\n");
     }
 }
 
-bool MultiCamera::checkMultiCamConfig()
+bool MultiCamera::initCamera() 
 {
     if(cam_config_.size() <= 0)
     {
@@ -224,41 +138,46 @@ bool MultiCamera::checkMultiCamConfig()
     
     int cols = std::max_element(cam_config_.begin(), cam_config_.end(), MultiCamConfig::compareCol)->grid_col + 1;
     int rows = std::max_element(cam_config_.begin(), cam_config_.end(), MultiCamConfig::compareRow)->grid_row + 1;
+    cameras_.resize(cols * rows, NULL);
     
-    bool cams_exists[cols * rows];
     int height_per_col[cols];
     int width_per_row[rows];
+    int format_per_cam[cols * rows];
     
-    memset(cams_exists, 0, sizeof(bool)*cols*rows);
     memset(height_per_col, 0, sizeof(int)*cols);
     memset(width_per_row, 0, sizeof(int)*rows);
     
     std::vector<MultiCamConfig>::iterator iter;
     for(iter = cam_config_.begin(); iter != cam_config_.end(); iter++)
     {
-        if(iter->frame_height <= 0 || iter->frame_width <= 0)
+        MultiCamConfig* child_cfg = &(*iter);
+        if(child_cfg->driver == DRIVER_MUTLICAM)
         {
-            std::cout << "bad multicam layout: invalid frame_size" << std::endl;
+            std::cout << "cascading multicam driver not supported" << std::endl;
             return false;
         }
         
-        if(iter->frame_xoff >= iter->frame_width || iter->frame_yoff >= iter->frame_height)
+        CameraEngine* cam = CameraTool::getCamera(child_cfg, false);
+        if(cam == NULL) return false;
+        
+        if(!cam->initCamera())
         {
-            std::cout << "bad multicam layout: invalid offset" << std::endl;
+            delete cam;
             return false;
         }
         
-        int cam_exists_at = iter->grid_row * cols + iter->grid_col;
-        if(cams_exists[cam_exists_at])
+        int cam_list_pos = child_cfg->grid_row * cols + child_cfg->grid_col;
+        if(cameras_[cam_list_pos] != NULL)
         {
             std::cout << "bad multicam layout: two or more cams placed in same cell" << std::endl;
             return false;
         }
         
-        cams_exists[cam_exists_at] = true;
+        cameras_[cam_list_pos] = cam;
         
-        height_per_col[iter->grid_col] = iter->frame_height;
-        width_per_row[iter->grid_row] = iter->frame_width;
+        height_per_col[child_cfg->grid_col] = cam->getHeight();
+        width_per_row[child_cfg->grid_row] = cam->getWidth();
+        format_per_cam[cam_list_pos] = cam->getFormat();
     }
     
     for(int i = 1; i < cols; i++)
@@ -279,9 +198,19 @@ bool MultiCamera::checkMultiCamConfig()
         }
     }
     
-    for(int i=0; i<cols * rows; i++)
+    for(int i = 1; i < cols * rows; i++)
     {
-        if(!cams_exists[i])
+        if(format_per_cam[i-1] != format_per_cam[i])
+        {
+            std::cout << "bad multicam layout: different formats per cam" << std::endl;
+            return false;
+        }
+    }
+    
+    std::vector<CameraEngine*>::iterator iter_cams;
+    for(iter_cams = cameras_.begin(); iter_cams != cameras_.end(); iter_cams++)
+    {
+        if(*iter_cams == NULL)
         {
             std::cout << "bad multicam layout: gab in camera grid" << std::endl;
             return false;
@@ -292,44 +221,14 @@ bool MultiCamera::checkMultiCamConfig()
     cameras_rows_ = rows;
     cfg->cam_height = height_per_col[0] * rows;
     cfg->cam_width = width_per_row[0] * cols;
+    cfg->buf_format = format_per_cam[0];
     cfg->frame = false;
     setupFrame();
     
-    return true;
-}
-
-void MultiCamera::printInfo()
-{
-    printf("Multicam: %i childs\n", (int)cameras_.size());
-    
-    std::vector<CameraEngine*>::iterator iter;
-    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
-    {
-        (*iter)->printInfo();
-        printf("\n");
-    }
-}
-
-bool MultiCamera::initCamera() 
-{
-    bool result = true;
-    
-    std::vector<CameraEngine*>::iterator iter;
-    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
-    {
-        if((*iter) == NULL)
-        {
-            printf("Multicam: child-cam could not be initialized.");
-            return false;
-        }
-        
-        result &= (*iter)->initCamera();
-    }
-    
     if(!cam_buffer)
-        cam_buffer = new unsigned char[cfg->frame_height * cfg->frame_width * cfg->cam_format];
+        cam_buffer = new unsigned char[cfg->frame_height * cfg->frame_width * cfg->buf_format];
     
-    return result;
+    return true;
 }
 
 bool MultiCamera::closeCamera()

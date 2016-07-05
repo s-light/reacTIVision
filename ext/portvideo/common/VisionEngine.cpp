@@ -354,7 +354,7 @@ void VisionEngine::initFrameProcessors() {
 
 void VisionEngine::setupCamera() {
     
-    camera_ = CameraTool::getCamera(camera_config_);
+    camera_ = CameraTool::getCamera(camera_config_, true);
 	if (camera_ == NULL) {
         allocateBuffers();
         return;

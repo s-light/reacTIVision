@@ -201,7 +201,7 @@ CameraEngine* CameraTool::getDefaultCamera() {
 	return NULL;
 }
 
-CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg) {
+CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg, bool fallback) {
 	
 	CameraEngine* camera = NULL;
 	int dev_count;
@@ -240,7 +240,7 @@ CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg) {
 	if (dev_count==0) printf("no system camera found\n");
 	else camera = videoInputCamera::getCamera(cam_cfg);
 	if (camera) return camera;
-	else return getDefaultCamera();
+	else if(fallback) return getDefaultCamera();
 
 #endif
 
@@ -261,7 +261,7 @@ CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg) {
 		return NULL;
 	} else camera = AVfoundationCamera::getCamera(cam_cfg);
 	if (camera) return camera;
-	else return getDefaultCamera();
+	else if(fallback) return getDefaultCamera();
 #else
 	// default driver
 	dev_count = QTKitCamera::getDeviceCount();
@@ -270,7 +270,7 @@ CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg) {
 		return NULL;
 	} else camera = QTKitCamera::getCamera(cam_cfg);
 	if (camera) return camera;
-	else return getDefaultCamera();
+	else if (fallback)return getDefaultCamera();
 #endif
 #endif
 
@@ -290,7 +290,7 @@ CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg) {
 		return NULL;
 	} else camera = V4Linux2Camera::getCamera(cam_cfg);
 	if (camera) return camera;
-	else return getDefaultCamera();
+	else if(fallback) return getDefaultCamera();
 
 #endif
 
@@ -336,6 +336,7 @@ void CameraTool::initCameraConfig(CameraConfig *cfg) {
 	cfg->red = SETTING_DEFAULT;
 	cfg->green = SETTING_DEFAULT;
 	
+    cfg->color = false;
 	cfg->force = false;
     cfg->flip_h = false;
     cfg->flip_v = false;
@@ -432,7 +433,6 @@ int CameraTool::mapCameraDriver(const char* const driver) {
 
 CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 
-	char path[1024];
 	initCameraConfig(&cam_cfg);
 	if (strcmp( cfgfile, "default" ) == 0) {
         whereIsConfig("camera.xml", cam_cfg.path);
@@ -452,11 +452,17 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 	tinyxml2::XMLHandle docHandle( &xml_settings );
 	tinyxml2::XMLHandle camera = docHandle.FirstChildElement("portvideo").FirstChildElement("camera");
 	tinyxml2::XMLElement* camera_element = camera.ToElement();
-	
+    
+    readSettings(camera_element, cam_cfg);
+    return &cam_cfg;
+}
+
+void CameraTool::readSettings(tinyxml2::XMLElement* camera_element, CameraConfig& cam_cfg)
+{
 	if( camera_element==NULL )
 	{
 		std::cout << "Error loading camera configuration file: " << cam_cfg.path << std::endl;
-		return &cam_cfg;
+        return;
 	}
 	
     const char* driver = camera_element->Attribute("driver");
@@ -475,7 +481,7 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 #endif
 	}
 	
-	tinyxml2::XMLElement* image_element = camera.FirstChildElement("capture").ToElement();
+	tinyxml2::XMLElement* image_element = camera_element->FirstChildElement("capture");
 	
 	if (image_element!=NULL) {
 		if ((image_element->Attribute("color")!=NULL) && ( strcmp( image_element->Attribute("color"), "true" ) == 0 )) cam_cfg.color = true;
@@ -506,7 +512,7 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
         cam_cfg.flip_v = image_element->Attribute("flip_v") != NULL && strcmp(image_element->Attribute("flip_v"), "true") == 0;
 	}
 	
-	tinyxml2::XMLElement* frame_element = camera.FirstChildElement("frame").ToElement();
+	tinyxml2::XMLElement* frame_element = camera_element->FirstChildElement("frame");
 	if (frame_element!=NULL) {
 		cam_cfg.frame = true;
 		
@@ -541,7 +547,7 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 		}
 	}
 	
-	tinyxml2::XMLElement* settings_element = camera.FirstChildElement("settings").ToElement();
+	tinyxml2::XMLElement* settings_element = camera_element->FirstChildElement("settings");
 	if (settings_element!=NULL) {
 		
 		cam_cfg.brightness = readAttribute(settings_element, "brightness");
@@ -571,8 +577,6 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 			cam_cfg.blue = SETTING_OFF;
 		}
 	}
-	
-	return &cam_cfg;
 }
 
 int CameraTool::readAttribute(tinyxml2::XMLElement* settings,const char *attribute) {
@@ -601,15 +605,21 @@ void CameraTool::saveSettings() {
 	tinyxml2::XMLHandle docHandle( &xml_settings );
 	tinyxml2::XMLHandle camera = docHandle.FirstChildElement("portvideo").FirstChildElement("camera");
 	tinyxml2::XMLElement* camera_element = camera.ToElement();
-	
-	
+    
+    saveSettings(cam_cfg, camera_element);
+	xml_settings.SaveFile(cam_cfg.path);
+	if( xml_settings.Error() ) std::cout << "Error saving camera configuration file: "  << cam_cfg.path << std::endl;
+}
+
+void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camera_element)
+{	
 	if( camera_element!=NULL )
 	{
 		camera_element->SetAttribute("driver",dstr[cam_cfg.driver]);
 		camera_element->SetAttribute("id",cam_cfg.device);
 	}
 	
-	tinyxml2::XMLElement* image_element = camera.FirstChildElement("capture").ToElement();
+	tinyxml2::XMLElement* image_element = camera_element->FirstChildElement("capture");
 	if (image_element!=NULL) {
 		image_element->SetAttribute("format",fstr[cam_cfg.cam_format]);
 		image_element->SetAttribute("width",cam_cfg.cam_width);
@@ -619,7 +629,7 @@ void CameraTool::saveSettings() {
         if(cam_cfg.flip_v) image_element->SetAttribute("flip_v", "true");
 	}
 	
-	tinyxml2::XMLElement* settings_element = camera.FirstChildElement("settings").ToElement();
+	tinyxml2::XMLElement* settings_element = camera_element->FirstChildElement("settings");
 	if (settings_element!=NULL) {
 		
 		if (cam_cfg.brightness!=SETTING_OFF) saveAttribute(settings_element, "brightness", cam_cfg.brightness);
@@ -659,16 +669,12 @@ void CameraTool::saveSettings() {
 		
 	}
 	
-	tinyxml2::XMLElement* frame_element = camera.FirstChildElement("frame").ToElement();
+	tinyxml2::XMLElement* frame_element = camera_element->FirstChildElement("frame");
 	if (frame_element!=NULL) {
 		
 		if (cam_cfg.frame_mode>=0) saveAttribute(frame_element, "mode", cam_cfg.frame_mode);
 		else frame_element->DeleteAttribute("mode");
-	}
-	
-	xml_settings.SaveFile(cam_cfg.path);
-	if( xml_settings.Error() ) std::cout << "Error saving camera configuration file: "  << cam_cfg.path << std::endl;
-	
+	}	
 }
 
 void CameraTool::saveAttribute(tinyxml2::XMLElement* settings,const char *attribute,int config) {
