@@ -31,7 +31,8 @@ FileCamera::FileCamera(CameraConfig *cam_cfg): CameraEngine(cam_cfg)
 
 FileCamera::~FileCamera()
 {
-	if (cam_buffer!=NULL) delete cam_buffer;
+	if (cam_buffer!=NULL) delete[] cam_buffer;
+    if(frm_buffer!= NULL) delete[] frm_buffer;
 }
 
 CameraEngine* FileCamera::getCamera(CameraConfig *cam_cfg) {
@@ -101,6 +102,13 @@ bool FileCamera::initCamera() {
 
 	cfg->cam_fps = 1;
 	setupFrame();
+    
+    if(cfg->frame)
+    {
+        frm_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->cam_format];
+        crop(cfg->cam_width, cfg->cam_height, cam_buffer, frm_buffer, cfg->cam_format);
+    }
+   
 	return true;
 }
 
@@ -131,6 +139,10 @@ unsigned char* FileCamera::getFrame()
 	usleep( 10000 ); // do 10fps
 #endif
 	} else running = true;
+    
+    if(cfg->frame)
+        return frm_buffer;
+    
 	return cam_buffer;
 }
 
