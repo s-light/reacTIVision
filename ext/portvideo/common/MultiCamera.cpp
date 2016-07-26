@@ -158,7 +158,11 @@ bool MultiCamera::initCamera()
         }
         
         CameraEngine* cam = CameraTool::getCamera(child_cfg, false);
-        if(cam == NULL) return false;
+        if(cam == NULL)
+        {
+            std::cout << "error creating child cam" << child_cfg->device << std::endl;
+            return false;
+        }
         
         if(!cam->initCamera())
         {
@@ -296,8 +300,9 @@ unsigned char* MultiCamera::getFrame()
 {
     std::vector<CameraEngine*>::iterator iter;
     unsigned char* childcam_buffer_start = cam_buffer;
-    int row_column = 0;
-    for(iter = cameras_.begin(); iter != cameras_.end(); row_column++, iter++)
+    int grid_column = 0;
+    int grid_row = 0;
+    for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
     {
         CameraEngine* cam = *iter;
         
@@ -305,22 +310,30 @@ unsigned char* MultiCamera::getFrame()
         
         unsigned char* buffer_write = childcam_buffer_start;
         unsigned char* child_frame = cam->getFrame();
-        if(child_frame == NULL) return NULL;
+        if(child_frame == NULL)
+        {
+            this->running = false;
+            return NULL;
+        }
         
-        for(int line_nr = 1; line_nr <= cam->getHeight(); line_nr++)
+        for(int i = 0; i < cam->getHeight(); i++)
         {
             memcpy(buffer_write, child_frame, line_size);
             child_frame += line_size;
             buffer_write += line_size * cameras_columns_;
         }
         
-        if(cameras_columns_ <= 1 || row_column == cameras_columns_ - 1)
+        if(cameras_columns_ <= 1 || grid_column == cameras_columns_ - 1)
         {
-            row_column = 0;
-            childcam_buffer_start = buffer_write;
+            grid_column = 0;
+            grid_row++;
+            childcam_buffer_start = cam_buffer + cam->getWidth() * cameras_columns_ * cam->getHeight() * grid_row * cam->getFormat();
         }
         else
+        {
+            grid_column++;
             childcam_buffer_start += line_size;
+        }
             
     }
     

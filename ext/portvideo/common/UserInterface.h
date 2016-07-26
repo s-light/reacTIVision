@@ -101,6 +101,9 @@ public:
 	virtual void drawEllipse(int x,int y, int w, int h, float r) = 0;
 	virtual void fillEllipse(int x,int y, int w, int h) = 0;
     
+    virtual float getDisplayVerticalDPI() { return 0; }
+    virtual float getDisplayHorizontalDPI() { return 0; }
+    
 protected:
 	bool verbose_;
     DisplayMode displayMode_;

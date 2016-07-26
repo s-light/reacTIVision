@@ -82,7 +82,7 @@ public:
 	void drawEllipse(int x,int y, int w, int h);
 	void drawEllipse(int x,int y, int w, int h, float r);
 	void fillEllipse(int x,int y, int w, int h);
-
+    
 protected:
 
     bool setupWindow();
