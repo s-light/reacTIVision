@@ -140,9 +140,9 @@ bool MultiCamera::initCamera()
     int rows = std::max_element(cam_config_.begin(), cam_config_.end(), MultiCamConfig::compareRow)->grid_row + 1;
     cameras_.resize(cols * rows, NULL);
     
-    int height_per_col[cols];
-    int width_per_row[rows];
-    int format_per_cam[cols * rows];
+    int* height_per_col = new int[cols];
+    int* width_per_row = new int[rows];
+    int* format_per_cam = new int[cols * rows];
     
     memset(height_per_col, 0, sizeof(int)*cols);
     memset(width_per_row, 0, sizeof(int)*rows);
@@ -232,6 +232,11 @@ bool MultiCamera::initCamera()
     if(!cam_buffer)
         cam_buffer = new unsigned char[cfg->frame_height * cfg->frame_width * cfg->buf_format];
     
+
+	delete[] height_per_col;
+	delete[] width_per_row;
+	delete[] format_per_cam;
+
     return true;
 }
 
