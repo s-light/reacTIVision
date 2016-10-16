@@ -27,66 +27,66 @@
 class MultiCamConfig : public CameraConfig
 {
 public:
-    static std::vector<MultiCamConfig> readConfig(const char* const cam_cfg_file);
-    static void writeConfig(std::vector<MultiCamConfig> cam_config, const char* const cam_cfg_file);
-    
-    static bool compareCol(const MultiCamConfig& x, const MultiCamConfig& y) { 
-        return x.grid_col < y.grid_col; 
-    };
-    static bool compareRow(const MultiCamConfig& x, const MultiCamConfig& y) {
-        return x.grid_row < y.grid_row;
-    }
-    
-    
-    MultiCamConfig();
-    virtual ~MultiCamConfig() { }
-    
-    int grid_row;
-    int grid_col;
-    
+	static std::vector<MultiCamConfig> readConfig(const char* const cam_cfg_file);
+	static void writeConfig(std::vector<MultiCamConfig> cam_config, const char* const cam_cfg_file);
+	
+	static bool compareCol(const MultiCamConfig& x, const MultiCamConfig& y) { 
+		return x.grid_col < y.grid_col; 
+	};
+	static bool compareRow(const MultiCamConfig& x, const MultiCamConfig& y) {
+		return x.grid_row < y.grid_row;
+	}
+	
+	
+	MultiCamConfig();
+	virtual ~MultiCamConfig() { }
+	
+	int grid_row;
+	int grid_col;
+	
 private:
-    CameraConfig child_cam_config_;
-    
+	CameraConfig child_cam_config_;
+	
 };
 
 class MultiCamera : public CameraEngine
 {
 public:
-    MultiCamera(CameraConfig *cam_cfg);
-    virtual ~MultiCamera();
-    
-    static CameraEngine* getCamera(CameraConfig* cam_cfg);
-    
+	MultiCamera(CameraConfig *cam_cfg);
+	virtual ~MultiCamera();
+	
+	static CameraEngine* getCamera(CameraConfig* cam_cfg);
+	
 	bool initCamera();
-    bool closeCamera();
+	bool closeCamera();
 	unsigned char* getFrame();
 	bool stillRunning() { return running; }
-    
-    bool startCamera();
+	
+	bool startCamera();
 	bool stopCamera();
 	bool resetCamera();
-    void printInfo();
-    
+	void printInfo();
+	
 	int getCameraSettingStep(int mode);
 	int getCameraSetting(int mode);
 	int getMaxCameraSetting(int mode);
 	int getMinCameraSetting(int mode);
-    bool getCameraSettingAuto(int mode);
-    int getDefaultCameraSetting(int mode);
+	bool getCameraSettingAuto(int mode);
+	int getDefaultCameraSetting(int mode);
 	bool hasCameraSetting(int mode);
 	bool hasCameraSettingAuto(int mode);
-    
+	
 	bool setCameraSettingAuto(int mode, bool flag);
 	bool setCameraSetting(int mode, int value);
 	bool setDefaultCameraSetting(int mode);
 
 private:
-    std::vector<MultiCamConfig> cam_config_;
-    std::vector<CameraEngine*> cameras_;
-    int cameras_columns_;
-    int cameras_rows_;
-    
-    char cam_config_file_[1024];
+	std::vector<MultiCamConfig> cam_config_;
+	std::vector<CameraEngine*> cameras_;
+	int cameras_columns_;
+	int cameras_rows_;
+	
+	char cam_config_file_[1024];
 };
 
 #endif	/* MULTICAMERA_H */
