@@ -23,28 +23,16 @@
 #include <unistd.h>
 #endif
 
-CalibrationEngine::CalibrationEngine(const char* out) {
+CalibrationEngine::CalibrationEngine(TuioServer* manager, FidtrackFinder* fidtrack_finder, VisionEngine* vision_engine, application_settings* app_config) {
 	
+    tuio_mgr = manager;
+    fid_finder = fidtrack_finder;
+    engine = vision_engine;
 	calibration = false;
 	file_exists = false;
-	quick_mode = true;
-	
-	if (strcmp(out, "none" ) == 0 ) {
-#ifdef __APPLE__
-		char path[1024];
-		CFBundleRef mainBundle = CFBundleGetMainBundle();
-		CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
-		CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
-		CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
-		CFRelease( mainBundleURL);
-		CFRelease( cfStringRef);
-		sprintf(full_path,"%s/Contents/Resources/calibration.grid",path);
-		calib_out = full_path;
-#else
-		calib_out = "./calibration.grid";
-#endif
-	} else calib_out = out;
-	
+    grid = NULL;
+    config = app_config;
+    cur_cam_idx = 0;
 	
 #ifdef WIN32
 	FILE *infile = fopen (calib_out, "r");
@@ -68,46 +56,12 @@ CalibrationEngine::CalibrationEngine(const char* out) {
 };
 
 CalibrationEngine::~CalibrationEngine() {
-	if (initialized) delete grid;
+	if (grid != NULL) delete grid;
 	
 	if (file_exists) {
 		remove(calib_bak);
 	}
 };
-
-bool CalibrationEngine::init(int w, int h, int sb, int db) {
-	
-	FrameProcessor::init(w,h,sb,db);
-	
-	grid_size_x = 7;
-	if (((float)width/height) > 1.3) grid_size_x +=2;
-	if (((float)width/height) > 1.7) grid_size_x +=2;
-	grid_size_y = 7;
-	
-	field_count_x = grid_size_x-1;
-	field_count_y = grid_size_y-1;
-	
-	center_x = field_count_x/2;
-	center_y = field_count_y/2;
-	
-	cell_size_x = width/field_count_x;
-	cell_size_y = height/field_count_y;
-	
-	grid = new CalibrationGrid(grid_size_x,grid_size_y);
-	grid->Reset();
-	
-	if (file_exists) {
-		grid->Load(calib_out);
-		sprintf(calib_bak,"%s.bak",calib_out);
-		grid->Store(calib_bak);
-	}
-	
-	grid_xpos = (char)(grid_size_x/2);
-	grid_ypos = (char)(grid_size_y/2);
-	
-	return true;
-}
-
 
 bool CalibrationEngine::setFlag(unsigned char flag, bool value, bool lock) {
 	return toggleFlag(flag,lock);
@@ -118,12 +72,26 @@ bool CalibrationEngine::toggleFlag(unsigned char flag, bool lock) {
 	if (flag==KEY_C) {
 		if (calibration) {
 			calibration = false;
+
+            //restore
+            engine->teardownCamera();
+            engine->resetCamera(&cam_cfg_bak);
+            restoreFidFinderSettings();
+
 			if(ui) ui->setDisplayMode(prevMode);
 		} else {
 			calibration = true;
-			
-			grid_xpos = (char)(grid_size_x/2);
-			grid_ypos = (char)(grid_size_y/2);
+
+            cam_cfg = CameraTool::readSettings(config->camera_config);
+            cam_cfg_bak = *cam_cfg;
+
+            backupFidFinderSettings();
+
+            if(cam_cfg->childs.size() > 0)
+                setupStepPosition();
+            else
+                setupStepBounding();
+
 
 			if(ui) {
 				prevMode = ui->getDisplayMode();
@@ -131,270 +99,348 @@ bool CalibrationEngine::toggleFlag(unsigned char flag, bool lock) {
 			}
 		}
 	}
+
+    if(!calibration) return lock;
+
+    if(flag == KEY_ENTER || flag == KEY_ENTER_RIGHT)
+    {
+        if(step == CalibrationStep::BOUNDING)
+        {
+            commitStepBounding();
+            setupStepDistortion();
+        }
+    }
+    else if(step == CalibrationStep::BOUNDING)
+    {
+        if(flag == KEY_D)
+        {
+            if(frame_xoff < width - 10)
+            {
+                frame_xoff++;
+                frame_width--;
+            }
+        }
+        else if(flag == KEY_S)
+        {
+            if(frame_yoff < height - 10)
+            {
+                frame_yoff++;
+                frame_height--;
+            }
+        }
+        else if(flag == KEY_A)
+        {
+            if(frame_xoff > 0)
+            {
+                frame_xoff--;
+                frame_width++;
+            }
+        }
+        else if(flag == KEY_W)
+        {
+            if(frame_yoff > 0)
+            {
+                frame_yoff--;
+                frame_height++;
+            }
+        }
+        else if(flag == KEY_RIGHT)
+        {
+            if(frame_width < width - frame_xoff) frame_width++;
+        }
+        else if(flag == KEY_LEFT)
+        {
+            if(frame_width > 10) frame_width--;
+        }
+        else if(flag == KEY_UP)
+        {
+            if(frame_height > 10) frame_height--;
+        }
+        else if(flag == KEY_DOWN)
+        {
+            if(frame_height < height - frame_yoff) frame_height++;
+        }
+    }
 	
-	if(!calibration) return lock;
-	
-	if ((flag==KEY_T) || (flag==KEY_N))  {
-		ui->setDisplayMode(SOURCE_DISPLAY);
-	}
-	
-	if (flag==KEY_Q) {
-		quick_mode=!quick_mode;
-		grid_xpos=4;
-		grid_ypos=3;
-	} else if (flag==KEY_J) {
-		grid->Reset();
-	} else if (flag==KEY_U) {
-		grid->Set(grid_xpos,grid_ypos,0.0,0.0);
-	} else if (flag==KEY_L) {
-		if (file_exists) grid->Load(calib_bak);
-	}
-	
-	if (quick_mode) {
-		if (flag==KEY_A) {
-			grid_xpos-=center_x;
-			if (grid_xpos<0) grid_xpos=0;
-			if (grid_ypos!=center_y) grid_xpos=center_x;
-		} else if (flag==KEY_D) {
-			grid_xpos+=center_x;
-			if (grid_xpos>field_count_x) grid_xpos=field_count_x;
-			if (grid_ypos!=center_y) grid_xpos=center_x;
-		} if (flag==KEY_W) {
-			grid_ypos-=center_y;
-			if (grid_ypos<0) grid_ypos=0;
-			if (grid_ypos!=center_y) grid_xpos=center_x;
-		} else if (flag==KEY_X) {
-			grid_ypos+=center_y;
-			if (grid_ypos>field_count_y) grid_ypos=field_count_y;
-			if (grid_ypos!=center_y) grid_xpos=center_x;
-		}
-		
-		//center
-		if ((grid_xpos==center_x) && (grid_ypos==center_y)) {
-			for (int gxp=0;gxp<grid_size_x;gxp++) {
-				for (int gyp=0;gyp<grid_size_y;gyp++) {
-					if (flag==KEY_LEFT) {
-						GridPoint p = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,p.x-0.01,p.y);
-					} else if (flag==KEY_RIGHT)  {
-						GridPoint p = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,p.x+0.01,p.y);
-					} else if (flag==KEY_UP) {
-						GridPoint p = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,p.x,p.y-0.01);
-					} else if (flag==KEY_DOWN) {
-						GridPoint p = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,p.x,p.y+0.01);
-					}
-				}
-			}
-			// left & right
-		} else if ((grid_xpos!=center_x) && (grid_ypos==center_y)) {
-			for (int gxp=0;gxp<center_x;gxp++) {
-				for (int gyp=0;gyp<grid_size_y;gyp++) {
-					float step = 0.01*(center_x-gxp);
-					if (grid_xpos==field_count_x) step=step*-1;
-					
-					if (flag==KEY_LEFT) {
-						GridPoint pl = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,pl.x-step,pl.y);
-						GridPoint pr = grid->GetInterpolated(field_count_x-gxp,gyp);
-						grid->Set(field_count_x-gxp,gyp,pr.x+step,pr.y);
-					} else if (flag==KEY_RIGHT) {
-						GridPoint pu = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,pu.x+step,pu.y);
-						GridPoint pr = grid->GetInterpolated(field_count_x-gxp,gyp);
-						grid->Set(field_count_x-gxp,gyp,pr.x-step,pr.y);
-					}
-				}
-			}
-			// top & bottom
-		} else if ((grid_xpos==center_x) && (grid_ypos!=center_y)) {
-			for (int gxp=0;gxp<grid_size_x;gxp++) {
-				for (int gyp=0;gyp<center_y;gyp++) {
-					float step = 0.01*(center_y-gyp);
-					if (grid_ypos==field_count_y) step=step*-1;
-					
-					if (flag==KEY_UP) {
-						GridPoint pu = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,pu.x,pu.y-step);
-						GridPoint pd = grid->GetInterpolated(gxp,field_count_y-gyp);
-						grid->Set(gxp,field_count_y-gyp,pd.x,pd.y+step);
-					} else if (flag==KEY_DOWN) {
-						GridPoint pu = grid->GetInterpolated(gxp,gyp);
-						grid->Set(gxp,gyp,pu.x,pu.y+step);
-						GridPoint pd = grid->GetInterpolated(gxp,field_count_y-gyp);
-						grid->Set(gxp,field_count_y-gyp,pd.x,pd.y-step);
-					}
-				}
-			}
-		}
-		
-	} else {
-		if (flag==KEY_A) {
-			grid_xpos--;
-			if (grid_xpos<0) grid_xpos=0;
-		} else if (flag==KEY_D) {
-			grid_xpos++;
-			if (grid_xpos>field_count_x) grid_xpos=field_count_x;
-		} if (flag==KEY_W) {
-			grid_ypos--;
-			if (grid_ypos<0) grid_ypos=0;
-		} else if (flag==KEY_X) {
-			grid_ypos++;
-			if (grid_ypos>field_count_y) grid_ypos=field_count_y;
-		} else if (flag==KEY_LEFT) {
-			GridPoint p = grid->GetInterpolated(grid_xpos,grid_ypos);
-			grid->Set(grid_xpos,grid_ypos,p.x-0.01,p.y);
-		} else if (flag==KEY_RIGHT)  {
-			GridPoint p = grid->GetInterpolated(grid_xpos,grid_ypos);
-			grid->Set(grid_xpos,grid_ypos,p.x+0.01,p.y);
-		} else if (flag==KEY_UP) {
-			GridPoint p = grid->GetInterpolated(grid_xpos,grid_ypos);
-			grid->Set(grid_xpos,grid_ypos,p.x,p.y-0.01);
-		} else if (flag==KEY_DOWN) {
-			GridPoint p = grid->GetInterpolated(grid_xpos,grid_ypos);
-			grid->Set(grid_xpos,grid_ypos,p.x,p.y+0.01);
-		}
-	}
-	
-	grid->Store(calib_out);
-	return lock;
+    return lock;
 }
 
 void CalibrationEngine::process(unsigned char *src, unsigned char *dest) {
 
-	if(calibration) drawDisplay();
+    if(!calibration)
+        return;
+
+    int left, top, right, bottom = 0;
+
+    left = frame_xoff;
+    top = frame_yoff;
+
+    if(cam_cfg->childs.size() > 0)
+    {
+        left += width / cam_cfg->childs[0].cam_width * cur_cam_idx;
+        top += height / cam_cfg->childs[0].cam_height * cur_cam_idx;
+    }
+
+    right = left + frame_width - 1;
+    bottom = top + frame_height - 1;
+
+    //ui->setColor(0, 0, 0);
+    //ui->fillRect(0, 0, width, height);
+
+    if(step == CalibrationStep::POSITION)
+    {
+        assert(cam_cfg->childs.size() > 0);
+
+        TuioBlob* blob = getFingerPressedBlob();
+        int color_fade = 0;
+        if(blob != NULL)
+        {
+            int cursor_duration_sec = (TuioTime::getSystemTime() - blob->getStartTime()).getSeconds();
+            color_fade = 80 * (cursor_duration_sec + 1);
+
+            if(cursor_duration_sec >= 3)
+            {
+                TUIO::TuioPoint pos = blob->getPosition();
+                int old_cam_idx = getCamIndexByPoint(pos);
+                commitStepPosition(old_cam_idx);
+                setupStepBounding();
+            }
+        }
+
+        CameraConfig firstChildCam = cam_cfg->childs[0];
+        int cam_rows = height / firstChildCam.cam_height;
+        int cur_cam_col = cur_cam_idx % cam_rows;
+        int cur_cam_row = cur_cam_idx / cam_rows;
+
+        int x = (cur_cam_col + 0.5) * firstChildCam.cam_width;
+        int y = (cur_cam_row + 0.5) * firstChildCam.cam_height;
+
+        ui->setColor(0, 255, 0);
+        ui->fillEllipse(x, y, 25, 25);
+    }
+    else if(step == CalibrationStep::BOUNDING)
+    {
+        ui->setColor(0, 255, 0);
+        ui->drawLine(left, top, right, top);
+        ui->drawLine(right, top, right, bottom);
+        ui->drawLine(right, bottom, left, bottom);
+        ui->drawLine(left, bottom, left, top);
+        ui->setColor(0, 0, 255);
+        ui->drawLine(left, top, right, bottom);
+        ui->drawLine(right, top, left, bottom);
+    }
+    else if(step == CalibrationStep::DISTORTION)
+    {
+        //TODO: identify flipping
+        TuioBlob* blob = getFingerPressedBlob();
+        int cur_point_color_fade = 0;
+
+        if(blob == NULL)
+            calib_data.blob_submitted = false;
+        else if(!calib_data.blob_submitted)
+        {
+            int cursor_duration_sec = (TuioTime::getSystemTime() - blob->getStartTime()).getSeconds();
+            cur_point_color_fade = 80 * (cursor_duration_sec + 1);
+
+            if(!calib_data.blob_submitted && cursor_duration_sec >= 3)
+            {
+                TUIO::TuioPoint pos = blob->getPosition();
+                grid->Set(calib_data.cur_x, calib_data.cur_y, pos.getX(), pos.getY());
+
+                calib_data.cur_x++;
+                if(calib_data.cur_x >= calib_data.count_x)
+                {
+                    calib_data.cur_x = 0;
+                    calib_data.cur_y++;
+                }
+
+                calib_data.blob_submitted = true;
+            }
+        }
+
+        if(calib_data.cur_y >= calib_data.count_y)
+        {
+            if(cur_cam_idx >= cam_cfg->childs.size())
+            {
+                commitStepDistortion();
+                setupStepTestResult();
+            }
+            else
+            {
+                cur_cam_idx++;
+                setupStepPosition();
+            }
+        }
+
+        for(int point_x = 0; point_x < calib_data.count_x; point_x++)
+        {
+            for(int point_y = 0; point_y < calib_data.count_y; point_y++)
+            {
+                GridPoint gp = grid->Get(point_x, point_y);
+                if(point_x == calib_data.cur_x && point_y == calib_data.cur_y)
+                    ui->setColor(255 - cur_point_color_fade, 0, cur_point_color_fade);
+                else if(gp.x == 0 && gp.y == 0)
+                    ui->setColor(0, 255, 0);
+                else
+                    ui->setColor(0, 0, 255);
+
+                ui->fillEllipse(left + point_x * calib_data.spacing_x, top + point_y * calib_data.spacing_y, 25, 25);
+            }
+        }
+    }
+
+    //TODO: Display instruction message per calibrationstep
 }
 
-void CalibrationEngine::drawDisplay() {
-	
-	if (ui==NULL) return;
-	if (ui->getDisplayMode()==NO_DISPLAY) return;
+int CalibrationEngine::getCamIndexByPoint(TUIO::TuioPoint x_Point)
+{
+    if(cam_cfg->childs.size() <= 0)
+        return 0;
 
-    float x,y;
-    int gx,gy;
-    GridPoint gp;
+    CameraConfig firstChildCam = cam_cfg->childs[0];
+    int cam_x = x_Point.getX() / firstChildCam.cam_height;
+    int cam_y = x_Point.getY() / firstChildCam.cam_width;
 
-	// draw the circles
-	ui->setColor(0, 0, 255);
-	int offset = (width-height)/2;
-	for (double a=-M_PI;a<M_PI;a+=0.005) {
-		int half = height/2;
-
-        // ellipse
-        if (grid_size_x>7) {
-            x = width/2+cos(a)*width/2;
-            y = half+sin(a)*half;
-
-            gp = grid->GetInterpolated(x/cell_size_x,y/cell_size_y);
-            gx = (int)(x + gp.x*cell_size_x);
-            gy = (int)(y + gp.y*cell_size_y);
-
-           ui->drawPoint(gx, gy);
-        }
-        
-        // extra circle
-        if (grid_size_x>9) {
-            x = offset+half+cos(a)*cell_size_x*4;
-            y = half+sin(a)*half;
-            
-            gp = grid->GetInterpolated(x/cell_size_x,y/cell_size_y);
-            gx = (int)(x + gp.x*cell_size_x);
-            gy = (int)(y + gp.y*cell_size_y);
-            
-            ui->drawPoint(gx, gy);
-        }
-		
-		// outer circle
-		x = offset+half+cos(a)*cell_size_x*3;
-		y = half+sin(a)*half;
-		
-		gp = grid->GetInterpolated(x/cell_size_x,y/cell_size_y);
-		gx = (int)(x + gp.x*cell_size_x);
-		gy = (int)(y + gp.y*cell_size_y);
-
-		ui->drawPoint(gx, gy);
-
-		// middle circle
-		x = offset+half+cos(a)*cell_size_x*2;
-		y = half+sin(a)*(half-cell_size_y);
-		
-		gp = grid->GetInterpolated(x/cell_size_x,y/cell_size_y);
-		gx = (int)(x + gp.x*cell_size_x);
-		gy = (int)(y + gp.y*cell_size_y);
-
-		ui->drawPoint(gx, gy);
-
-		// inner circle
-		x = offset+half+cos(a)*cell_size_x;
-		y = half+sin(a)*cell_size_y;
-		
-		gp = grid->GetInterpolated(x/cell_size_x,y/cell_size_y);
-		gx = (int)(x + gp.x*cell_size_x);
-		gy = (int)(y + gp.y*cell_size_y);
-
-		ui->drawPoint(gx, gy);
-	}
-	
-	// draw the horizontal lines
-	ui->setColor(0, 255, 0);
-	for (int i=0;i<grid_size_y;i++) {
-		float start_x = 0;
-		float start_y = i*cell_size_y;
-		float end_x = field_count_x*cell_size_x;
-		float end_y = start_y;
-		
-		for (float lx=start_x;lx<end_x;lx++) {
-			float ly = end_y - (end_y-start_y)/(end_x-start_x)*(end_x-lx);
-			
-			GridPoint gp = grid->GetInterpolated(lx/cell_size_x,ly/cell_size_y);
-			int gx = (int)(lx+gp.x*cell_size_x);
-			int gy = (int)(ly+gp.y*cell_size_y);
-
-			ui->drawPoint(gx, gy);
-		}
-	}
-	
-	// draw the vertical lines
-	for (int i=0;i<grid_size_x;i++) {
-		
-		float start_x = i*cell_size_x;
-		float start_y = 0;
-		float end_x = start_x;
-		float end_y = field_count_y*cell_size_y;
-		
-		for (float ly=start_y;ly<end_y;ly++) {
-			float lx = end_x - (end_x-start_x)/(end_y-start_y)*(end_y-ly);
-			
-			GridPoint gp = grid->GetInterpolated(lx/cell_size_x,ly/cell_size_y);
-			int gx = (int)(lx+gp.x*cell_size_x);
-			int gy = (int)(ly+gp.y*cell_size_y);
-			
-			ui->drawPoint(gx, gy);
-		}
-	}
-	
-	// draw the red box for the selected point
-	ui->setColor(255, 0, 0);
-	GridPoint p = grid->GetInterpolated(grid_xpos,grid_ypos);
-	gx = (int)(grid_xpos*cell_size_x + p.x*cell_size_x);
-	gy = (int)(grid_ypos*cell_size_y + p.y*cell_size_y);
-
-	ui->fillRect(gx-3, gy-3,7,7);
-	
-	// draw the grid points
-	ui->setColor(255, 0, 255);
-	for (int i=0;i<grid_size_x;i++) {
-		for (int j=0;j<grid_size_y;j++) {
-			GridPoint gp = grid->GetInterpolated(i,j);
-			int gx = (int)(i*cell_size_x + gp.x*cell_size_x);
-			int gy = (int)(j*cell_size_y + gp.y*cell_size_y);
-
-			ui->fillRect(gx-1, gy-1,3,3);
-		}
-	}
-	
+    return cam_y * width + cam_x;
 }
+
+TUIO::TuioBlob* CalibrationEngine::getFingerPressedBlob()
+{
+    std::list<TuioBlob*> blobs = tuio_mgr->getTuioBlobs();
+    if(blobs.size() == 1)
+        return *blobs.begin();
+
+    return NULL;
+}
+
+void CalibrationEngine::setupStepTestResult()
+{
+    step = CalibrationStep::TESTRESULT;
+}
+
+void CalibrationEngine::setupStepBounding()
+{
+    step = CalibrationStep::BOUNDING;
+
+    if(cam_cfg->frame)
+    {
+        cam_cfg->frame = false;
+        cam_cfg->frame_height = SETTING_MAX;
+        cam_cfg->frame_width = SETTING_MAX;
+        cam_cfg->frame_xoff = 0;
+        cam_cfg->frame_yoff = 0;
+        engine->teardownCamera();
+        engine->resetCamera(cam_cfg);
+    }
+
+    frame_xoff = 0;
+    frame_yoff = 0;
+
+    if(cam_cfg->childs.size() > 0)
+    {
+        frame_width = cam_cfg->childs[0].cam_width;
+        frame_height = cam_cfg->childs[0].cam_height;
+    }
+    else
+    {
+        frame_width = width;
+        frame_height = height;
+    }
+}
+
+void CalibrationEngine::commitStepBounding()
+{
+    if(frame_xoff > 0 || frame_yoff > 0 || frame_width != width || frame_height != height)
+    {
+        cam_cfg->frame = true;
+        cam_cfg->frame_xoff = frame_xoff;
+        cam_cfg->frame_yoff = frame_yoff;
+        cam_cfg->frame_width = frame_width;
+        cam_cfg->frame_height = frame_height;
+        engine->teardownCamera();
+        engine->resetCamera(cam_cfg);
+    }
+}
+
+void CalibrationEngine::setupStepDistortion()
+{
+    step = CalibrationStep::DISTORTION;
+
+    getGridConfigPath(calib_out);
+
+    frame_xoff = 0;
+    frame_yoff = 0;
+    frame_width = width;
+    frame_height = height;
+
+    grid = new CalibrationGrid(frame_width, frame_height);
+    grid->Reset();
+
+    calib_data.count_x = 6;
+    calib_data.count_y = 6;
+    if(((float)width / height) > 1.3) calib_data.count_x += 2;
+    if(((float)width / height) > 1.7) calib_data.count_x += 2;
+    calib_data.spacing_x = (frame_width - 1) / (float)(calib_data.count_x - 1);
+    calib_data.spacing_y = (frame_height - 1) / (float)(calib_data.count_y - 1);
+
+    calib_data.cur_x = 0;
+    calib_data.cur_y = 0;
+    calib_data.blob_submitted = false;
+
+    //enable blob detecting and disable finger detecting
+    //-> finger detecting wont work in high distorted areas
+    fid_finder->detect_blobs = true;
+    fid_finder->detect_fingers = false;
+    fid_finder->min_blob_size = 10;
+    fid_finder->max_blob_size = 100;
+}
+
+void CalibrationEngine::commitStepDistortion()
+{
+    grid->Store(calib_out);
+}
+
+void CalibrationEngine::setupStepPosition()
+{
+    step = CalibrationStep::POSITION;
+}
+
+void CalibrationEngine::commitStepPosition(int old_cam_idx)
+{
+    std::iter_swap(cam_cfg->childs.begin() + cur_cam_idx, cam_cfg->childs.begin() + old_cam_idx);
+}
+
+void CalibrationEngine::backupFidFinderSettings()
+{
+    fid_finder_bak.detect_blobs = fid_finder->detect_blobs;
+    fid_finder_bak.detect_fingers = fid_finder->detect_fingers;
+    fid_finder_bak.min_blob_size = fid_finder->min_blob_size;
+    fid_finder_bak.max_blob_size = fid_finder->max_blob_size;
+}
+
+void CalibrationEngine::restoreFidFinderSettings()
+{
+    fid_finder->detect_blobs = fid_finder_bak.detect_blobs;
+    fid_finder->detect_fingers = fid_finder_bak.detect_fingers;
+    fid_finder->min_blob_size = fid_finder_bak.min_blob_size;
+    fid_finder->max_blob_size = fid_finder_bak.max_blob_size;
+}
+
+void CalibrationEngine::getGridConfigPath(char* config_path)
+{
+#ifdef __APPLE__
+    char path[1024];
+    CFBundleRef mainBundle = CFBundleGetMainBundle();
+    CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
+    CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
+    CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
+    CFRelease(mainBundleURL);
+    CFRelease(cfStringRef);
+    sprintf(config_path, "%s/Contents/Resources/calibration.grid", path);
+#else
+    strcpy(config_path, "./calibration.grid");
+#endif
+}
+
 
 

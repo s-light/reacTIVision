@@ -42,25 +42,9 @@
 class FiducialFinder: public FrameProcessor
 {
 public:
-	FiducialFinder(TUIO::TuioManager *manager, const char* grid_cfg) {
+	FiducialFinder(TUIO::TuioManager *manager) {
 		
 		this->tuioManager = manager;
-		
-		if (strcmp(grid_cfg, "none" ) == 0 ) {
-#ifdef __APPLE__
-			char path[1024];
-			CFBundleRef mainBundle = CFBundleGetMainBundle();
-			CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
-			CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
-			CFStringGetCString( cfStringRef, path, 1024, kCFStringEncodingASCII);
-			CFRelease( mainBundleURL);
-			CFRelease( cfStringRef);
-			sprintf(full_path,"%s/Contents/Resources/calibration.grid",path);
-			grid_config = full_path;
-#else
-			grid_config = "./calibration.grid";
-#endif
-		} else grid_config = grid_cfg;
 		
 		calibration = false;
 		totalframes = 0;
@@ -80,6 +64,7 @@ public:
 	virtual void process(unsigned char *src, unsigned char *dest) = 0;
 	bool init(int w, int h, int sb ,int db);
 	bool toggleFlag(unsigned char flag, bool lock);
+    void computeGrid();
 	
 protected:
 	int session_id;
@@ -88,9 +73,6 @@ protected:
 	const char* grid_config;
 	int cell_width, cell_height;
 	int grid_size_x, grid_size_y;
-#ifdef __APPLE__
-	char full_path[1024];
-#endif
 	
 	bool calibration, show_grid, empty_grid;
 	ShortPoint* dmap;
@@ -98,7 +80,6 @@ protected:
 	void displayControl();
 	void drawObject(int id, float xpos, float ypos, int state);
 	void drawGrid(unsigned char *src, unsigned char *dest);
-	void computeGrid();
 	
 	TUIO::TuioManager *tuioManager;
 

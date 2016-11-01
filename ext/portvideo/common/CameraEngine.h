@@ -146,6 +146,8 @@ struct CameraConfig {
     bool flip_h;
     bool flip_v;
 
+    char calib_grid_path[1024];
+
     std::vector<CameraConfig> childs;
 
     bool operator < (const CameraConfig& c) const {

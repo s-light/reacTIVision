@@ -348,6 +348,8 @@ void CameraTool::initCameraConfig(CameraConfig *cfg) {
 	cfg->force = false;
     cfg->flip_h = false;
     cfg->flip_v = false;
+
+    cfg->calib_grid_path[0] = '\0';
 }
 
 void CameraTool::setCameraConfig(CameraConfig *cfg) {

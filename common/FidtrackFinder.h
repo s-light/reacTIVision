@@ -34,8 +34,10 @@ using namespace TUIO;
 
 class FidtrackFinder: public FiducialFinder
 {
+    friend class CalibrationEngine;
+
 public:
-	FidtrackFinder(TUIO::TuioManager *manager, application_settings *config) : FiducialFinder (manager,config->grid_config) {
+	FidtrackFinder(TUIO::TuioManager *manager, application_settings *config) : FiducialFinder (manager) {
 		
 		#ifdef __APPLE__
 		if (strstr(config->tree_config,".trees")!=NULL) {

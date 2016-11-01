@@ -22,6 +22,7 @@
 #include "FrameProcessor.h"
 #include "FidtrackFinder.h"
 #include "CalibrationGrid.h"
+#include "VisionEngine.h"
 #include <vector>
 
 struct PointPair {
@@ -31,38 +32,83 @@ struct PointPair {
 	float angle;
 };
 
+typedef struct FidtrackFinderSettingBackup
+{
+    bool detect_fingers;
+    bool detect_blobs;
+    int min_blob_size;
+    int max_blob_size;
+} FidtrackFinderSettingBackup;
+
+typedef struct DistortionCalibData
+{
+    int cur_x;
+    int cur_y;
+    int count_x;
+    int count_y;
+
+    float spacing_x;
+    float spacing_y;
+    bool blob_submitted;
+} DistortionCalibData;
+
+enum CalibrationStep {
+    POSITION,
+    BOUNDING,
+    DISTORTION,
+    TESTRESULT,
+};
+
 class CalibrationEngine: public FrameProcessor
 {
 public:
-	CalibrationEngine(const char* out);
+	CalibrationEngine(TuioServer* manager, FidtrackFinder* fidtrack_finder, VisionEngine* engine, application_settings* config);
 	~CalibrationEngine();
 
     void process(unsigned char *src, unsigned char *dest);
-	void drawDisplay();
-	bool init(int w ,int h, int sb, int db);
 	
 	bool setFlag(unsigned char flag, bool value, bool lock);
 	bool toggleFlag(unsigned char flag, bool lock);
 	
 private:
+    TuioServer* tuio_mgr;
+    VisionEngine* engine;
+    FidtrackFinder* fid_finder;
 	CalibrationGrid *grid;
-	const char* calib_out;
+    char calib_out[1024];
+    application_settings* config;
+    CameraConfig* cam_cfg;
+
 	char calib_bak[1024];
-#ifdef __APPLE__
-	char full_path[1024];
-#endif
 	bool file_exists;
 	
 	bool calibration;
-	bool quick_mode;
 	
-	int grid_xpos, grid_ypos;
-	int grid_size_x, grid_size_y;
-	int field_count_x, field_count_y;
-	int center_x, center_y;
-	int cell_size_x, cell_size_y;
+	int frame_xoff, frame_yoff;
+	int frame_width, frame_height;
 	
 	DisplayMode prevMode;
+
+    int cur_cam_idx;
+    CalibrationStep step;
+    DistortionCalibData calib_data;
+    FidtrackFinderSettingBackup fid_finder_bak;
+    CameraConfig cam_cfg_bak;
+
+    void setupStepPosition();
+    void commitStepPosition(int old_cam_idx);
+    void setupStepBounding();
+    void commitStepBounding();
+    void setupStepDistortion();
+    void commitStepDistortion();
+    void setupStepTestResult();
+
+    void backupFidFinderSettings();
+    void restoreFidFinderSettings();
+
+    void getGridConfigPath(char* config_path);
+    TUIO::TuioBlob* getFingerPressedBlob();
+    int getCamIndexByPoint(TUIO::TuioPoint x_Point);
 };
 
 #endif

@@ -29,7 +29,6 @@ struct application_settings {
 	int tuio_port[32];
 	std::string tuio_host[32];
 	char tree_config[1024];
-	char grid_config[1024];
 	char camera_config[1024];
 	bool invert_x;
 	bool invert_y;

@@ -50,6 +50,9 @@
 #define KEY_Y 28
 #define KEY_Z 29
 
+#define KEY_ENTER 40
+#define KEY_ENTER_RIGHT 88
+
 #define KEY_SPACE 44
 #define KEY_RIGHT 79
 #define KEY_LEFT 80

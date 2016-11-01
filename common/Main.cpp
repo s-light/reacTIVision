@@ -68,7 +68,6 @@ void readSettings(application_settings *config) {
 	}
 	
 	sprintf(config->tree_config,"default");
-	sprintf(config->grid_config,"none");
 	sprintf(config->camera_config,"default");
 	config->invert_x = false;
 	config->invert_y = false;
@@ -275,7 +274,6 @@ void readSettings(application_settings *config) {
 			if (strstr(calibration_element->Attribute("invert"),"y")>0) config->invert_y = true;
 			if (strstr(calibration_element->Attribute("invert"),"a")>0) config->invert_a = true;
 		}
-		if(calibration_element->Attribute("grid")!=NULL) sprintf(config->grid_config,"%s",calibration_element->Attribute("grid"));
 	}
 	
 }
@@ -395,7 +393,6 @@ void writeSettings(application_settings *config) {
 			if (config->invert_a) strcat(config_value,"a");
 			calibration_element->SetAttribute("invert",config_value);
 		}
-		if(calibration_element->Attribute("grid")!=NULL) calibration_element->SetAttribute("grid",config->grid_config);
 	}
 	
 	xml_settings.SaveFile(config->file);
@@ -460,9 +457,9 @@ int main(int argc, char* argv[]) {
 	}
 	
 	TuioServer *server = NULL;
-	FrameProcessor *fiducialfinder	= NULL;
-	FrameProcessor *thresholder	= NULL;
-	FrameProcessor *calibrator	= NULL;
+	FidtrackFinder *fiducialfinder	= NULL;
+	FrameThresholder *thresholder	= NULL;
+	CalibrationEngine *calibrator	= NULL;
 	
 	for (int i=0;i<config.tuio_count;i++) {
 		OscSender *sender = NULL;
@@ -491,7 +488,7 @@ int main(int argc, char* argv[]) {
 	fiducialfinder = new FidtrackFinder(server, &config);
 	engine->addFrameProcessor(fiducialfinder);
 	
-	calibrator = new CalibrationEngine(config.grid_config);
+	calibrator = new CalibrationEngine(server, fiducialfinder, engine, &config);
 	engine->addFrameProcessor(calibrator);
 	
 	engine->start();
