@@ -82,8 +82,10 @@ public:
     static void saveAttribute(tinyxml2::XMLElement* settings,const char *attribute,int config);
     
 private:
-    
+    static bool shouldSaveAttribute(int config);
+
     static CameraConfig cam_cfg;
+    static char cam_cfg_path[256];
 };
 
 #endif

@@ -24,37 +24,13 @@
 #include "CameraTool.h"
 #include "tinyxml2.h"
 
-class MultiCamConfig : public CameraConfig
-{
-public:
-	static std::vector<MultiCamConfig> readConfig(const char* const cam_cfg_file);
-	static void writeConfig(std::vector<MultiCamConfig> cam_config, const char* const cam_cfg_file);
-	
-	static bool compareCol(const MultiCamConfig& x, const MultiCamConfig& y) { 
-		return x.grid_col < y.grid_col; 
-	};
-	static bool compareRow(const MultiCamConfig& x, const MultiCamConfig& y) {
-		return x.grid_row < y.grid_row;
-	}
-	
-	
-	MultiCamConfig();
-	virtual ~MultiCamConfig() { }
-	
-	int grid_row;
-	int grid_col;
-	
-private:
-	CameraConfig child_cam_config_;
-	
-};
-
 class MultiCamera : public CameraEngine
 {
 public:
 	MultiCamera(CameraConfig *cam_cfg);
 	virtual ~MultiCamera();
 	
+    static std::vector<CameraConfig> getCameraConfigs(std::vector<CameraConfig> child_cams);
 	static CameraEngine* getCamera(CameraConfig* cam_cfg);
 	
 	bool initCamera();
@@ -81,12 +57,9 @@ public:
 	bool setDefaultCameraSetting(int mode);
 
 private:
-	std::vector<MultiCamConfig> cam_config_;
 	std::vector<CameraEngine*> cameras_;
 	int cameras_columns_;
 	int cameras_rows_;
-	
-	char cam_config_file_[1024];
 };
 
 #endif	/* MULTICAMERA_H */

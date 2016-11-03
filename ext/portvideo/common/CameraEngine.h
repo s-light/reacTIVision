@@ -100,8 +100,6 @@ enum CameraSetting { BRIGHTNESS, CONTRAST, SHARPNESS, AUTO_GAIN, GAIN, AUTO_EXPO
 
 struct CameraConfig {
 
-    char path[1024];
-
     int driver;
     int device;
 
@@ -147,6 +145,8 @@ struct CameraConfig {
 	bool force;
     bool flip_h;
     bool flip_v;
+
+    std::vector<CameraConfig> childs;
 
     bool operator < (const CameraConfig& c) const {
 

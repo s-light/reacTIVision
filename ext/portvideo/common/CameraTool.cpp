@@ -22,6 +22,7 @@
 #endif
 
 CameraConfig CameraTool::cam_cfg = {};
+char CameraTool::cam_cfg_path[256];
 
 void CameraTool::printConfig(std::vector<CameraConfig> cfg_list) {
 
@@ -103,6 +104,12 @@ std::vector<CameraConfig> CameraTool::findDevices() {
 	std::vector<CameraConfig> ps3eye_list = PS3EyeCamera::getCameraConfigs();
 	dev_list.insert(dev_list.end(), ps3eye_list.begin(), ps3eye_list.end());
 #endif
+
+	if(dev_list.size() > 1)
+	{
+		std::vector<CameraConfig> multicam_list = MultiCamera::getCameraConfigs(dev_list);
+		dev_list.insert(dev_list.end(), multicam_list.begin(), multicam_list.end());
+	}
 
 	return dev_list;
 	
@@ -300,6 +307,7 @@ CameraEngine* CameraTool::getCamera(CameraConfig *cam_cfg, bool fallback) {
 void CameraTool::initCameraConfig(CameraConfig *cfg) {
 	
 	sprintf(cfg->src,"none");
+	cfg->name[0] = '\0';
 	
 	cfg->driver = DRIVER_DEFAULT;
 	cfg->device = 0;
@@ -364,6 +372,8 @@ void CameraTool::setCameraConfig(CameraConfig *cfg) {
 		cam_cfg.red = SETTING_DEFAULT;
 		cam_cfg.green = SETTING_DEFAULT;
 	}
+
+	strncpy(cam_cfg.name, cfg->name, 256);
 
 	cam_cfg.driver = cfg->driver;
 	cam_cfg.device = cfg->device;
@@ -433,26 +443,25 @@ int CameraTool::mapCameraDriver(const char* const driver) {
 
 CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 
-	initCameraConfig(&cam_cfg);
-	if (strcmp( cfgfile, "default" ) == 0) {
-        whereIsConfig("camera.xml", cam_cfg.path);
-        cfgfile = cam_cfg.path;
-    }else
-        sprintf(cam_cfg.path,"%s",cfgfile);
-	
+    if(strcmp(cfgfile, "default") == 0) {
+        whereIsConfig("camera.xml", cam_cfg_path);
+    }
+    else
+        sprintf(cam_cfg_path, "%s", cfgfile);
 
 	tinyxml2::XMLDocument xml_settings;
-	xml_settings.LoadFile(cam_cfg.path);
+	xml_settings.LoadFile(cam_cfg_path);
 	if( xml_settings.Error() )
 	{
-		std::cout << "Error loading camera configuration file: " << cam_cfg.path << std::endl;
+		std::cout << "Error loading camera configuration file: " << cam_cfg_path << std::endl;
 		return &cam_cfg;
 	}
 	
 	tinyxml2::XMLHandle docHandle( &xml_settings );
 	tinyxml2::XMLHandle camera = docHandle.FirstChildElement("portvideo").FirstChildElement("camera");
 	tinyxml2::XMLElement* camera_element = camera.ToElement();
-    
+
+    initCameraConfig(&cam_cfg);
     readSettings(camera_element, cam_cfg);
     return &cam_cfg;
 }
@@ -461,7 +470,7 @@ void CameraTool::readSettings(tinyxml2::XMLElement* camera_element, CameraConfig
 {
 	if( camera_element==NULL )
 	{
-		std::cout << "Error loading camera configuration file: " << cam_cfg.path << std::endl;
+		std::cout << "Error loading camera configuration file: " << cam_cfg_path << std::endl;
         return;
 	}
 	
@@ -577,6 +586,16 @@ void CameraTool::readSettings(tinyxml2::XMLElement* camera_element, CameraConfig
 			cam_cfg.blue = SETTING_OFF;
 		}
 	}
+
+	tinyxml2::XMLElement* child_cam = camera_element->FirstChildElement("child");
+	while(child_cam != NULL)
+	{
+		CameraConfig child_cfg;
+		initCameraConfig(&child_cfg);
+		readSettings(child_cam, child_cfg);
+		cam_cfg.childs.push_back(child_cfg);
+		child_cam = child_cam->NextSiblingElement("child");
+	}
 }
 
 int CameraTool::readAttribute(tinyxml2::XMLElement* settings,const char *attribute) {
@@ -594,87 +613,72 @@ int CameraTool::readAttribute(tinyxml2::XMLElement* settings,const char *attribu
 
 void CameraTool::saveSettings() {
 	
-	tinyxml2::XMLDocument xml_settings;
-	xml_settings.LoadFile(cam_cfg.path);
-	if( xml_settings.Error() )
-	{
-		std::cout << "Error saving camera configuration file: " << cam_cfg.path << std::endl;
-		return;
-	}
-	
+	tinyxml2::XMLDocument xml_settings;	
 	tinyxml2::XMLHandle docHandle( &xml_settings );
-	tinyxml2::XMLHandle camera = docHandle.FirstChildElement("portvideo").FirstChildElement("camera");
-	tinyxml2::XMLElement* camera_element = camera.ToElement();
+
+    tinyxml2::XMLElement* portvideo = xml_settings.NewElement("portvideo");
+    xml_settings.LinkEndChild(portvideo);
+
+    tinyxml2::XMLElement* camera_element = xml_settings.NewElement("camera");
+    portvideo->LinkEndChild(camera_element);
     
     saveSettings(cam_cfg, camera_element);
-	xml_settings.SaveFile(cam_cfg.path);
-	if( xml_settings.Error() ) std::cout << "Error saving camera configuration file: "  << cam_cfg.path << std::endl;
+	xml_settings.SaveFile(cam_cfg_path);
+	if( xml_settings.Error() ) std::cout << "Error saving camera configuration file: "  << cam_cfg_path << std::endl;
 }
 
 void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camera_element)
 {	
-	if( camera_element!=NULL )
-	{
-		camera_element->SetAttribute("driver",dstr[cam_cfg.driver]);
-		camera_element->SetAttribute("id",cam_cfg.device);
-	}
+    tinyxml2::XMLDocument* doc = camera_element->GetDocument();
+
+	camera_element->SetAttribute("driver",dstr[cam_cfg.driver]);
+	camera_element->SetAttribute("id",cam_cfg.device);
 	
-	tinyxml2::XMLElement* image_element = camera_element->FirstChildElement("capture");
-	if (image_element!=NULL) {
-		image_element->SetAttribute("format",fstr[cam_cfg.cam_format]);
-		image_element->SetAttribute("width",cam_cfg.cam_width);
-		image_element->SetAttribute("height",cam_cfg.cam_height);
-		image_element->SetAttribute("fps",cam_cfg.cam_fps);
-        if(cam_cfg.flip_h) image_element->SetAttribute("flip_h", "true");
-        if(cam_cfg.flip_v) image_element->SetAttribute("flip_v", "true");
-	}
+	tinyxml2::XMLElement* image_element = doc->NewElement("capture");
+	image_element->SetAttribute("format",fstr[cam_cfg.cam_format]);
+	image_element->SetAttribute("width",cam_cfg.cam_width);
+	image_element->SetAttribute("height",cam_cfg.cam_height);
+	image_element->SetAttribute("fps",cam_cfg.cam_fps);
+    camera_element->LinkEndChild(image_element);
 	
-	tinyxml2::XMLElement* settings_element = camera_element->FirstChildElement("settings");
-	if (settings_element!=NULL) {
+	tinyxml2::XMLElement* settings_element = doc->NewElement("settings");
+	if (shouldSaveAttribute(cam_cfg.brightness)) saveAttribute(settings_element, "brightness", cam_cfg.brightness);
+	if (shouldSaveAttribute(cam_cfg.contrast)) saveAttribute(settings_element, "contrast", cam_cfg.contrast);
+	if (shouldSaveAttribute(cam_cfg.sharpness)) saveAttribute(settings_element, "sharpness", cam_cfg.sharpness);
+	if (shouldSaveAttribute(cam_cfg.gain)) saveAttribute(settings_element, "gain", cam_cfg.gain);
 		
-		if (cam_cfg.brightness!=SETTING_OFF) saveAttribute(settings_element, "brightness", cam_cfg.brightness);
-		else settings_element->DeleteAttribute("brightness");
-		if (cam_cfg.contrast!=SETTING_OFF) saveAttribute(settings_element, "contrast", cam_cfg.contrast);
-		else settings_element->DeleteAttribute("contrast");
-		if (cam_cfg.sharpness!=SETTING_OFF) saveAttribute(settings_element, "sharpness", cam_cfg.sharpness);
-		else settings_element->DeleteAttribute("sharpness");
-		if (cam_cfg.gain!=SETTING_OFF) saveAttribute(settings_element, "gain", cam_cfg.gain);
-		else settings_element->DeleteAttribute("gain");
+	if (shouldSaveAttribute(cam_cfg.exposure)) saveAttribute(settings_element, "exposure", cam_cfg.exposure);
+	if (shouldSaveAttribute(cam_cfg.focus)) saveAttribute(settings_element, "focus", cam_cfg.focus);
+	if (shouldSaveAttribute(cam_cfg.shutter)) saveAttribute(settings_element, "shutter", cam_cfg.shutter);
+	if (shouldSaveAttribute(cam_cfg.white)) saveAttribute(settings_element, "white", cam_cfg.white);
+	if (shouldSaveAttribute(cam_cfg.backlight)) saveAttribute(settings_element, "backlight", cam_cfg.backlight);
+	if (shouldSaveAttribute(cam_cfg.powerline)) saveAttribute(settings_element, "powerline", cam_cfg.powerline);
+	if (shouldSaveAttribute(cam_cfg.gamma)) saveAttribute(settings_element, "gamma", cam_cfg.gamma);
 		
-		if (cam_cfg.exposure!=SETTING_OFF) saveAttribute(settings_element, "exposure", cam_cfg.exposure);
-		else settings_element->DeleteAttribute("exposure");
-		if (cam_cfg.focus!=SETTING_OFF) saveAttribute(settings_element, "focus", cam_cfg.focus);
-		else settings_element->DeleteAttribute("focus");
-		if (cam_cfg.shutter!=SETTING_OFF) saveAttribute(settings_element, "shutter", cam_cfg.shutter);
-		else settings_element->DeleteAttribute("shutter");
-		if (cam_cfg.white!=SETTING_OFF) saveAttribute(settings_element, "white", cam_cfg.white);
-		else settings_element->DeleteAttribute("white");
-		if (cam_cfg.backlight!=SETTING_OFF) saveAttribute(settings_element, "backlight", cam_cfg.backlight);
-		else settings_element->DeleteAttribute("backlight");
-		if (cam_cfg.powerline!=SETTING_OFF) saveAttribute(settings_element, "powerline", cam_cfg.powerline);
-		else settings_element->DeleteAttribute("powerline");
-		if (cam_cfg.gamma!=SETTING_OFF) saveAttribute(settings_element, "gamma", cam_cfg.gamma);
-		else settings_element->DeleteAttribute("gamma");
-		
-		if (cam_cfg.saturation!=SETTING_OFF) saveAttribute(settings_element, "saturation", cam_cfg.saturation);
-		else settings_element->DeleteAttribute("saturation");
-		if (cam_cfg.hue!=SETTING_OFF) saveAttribute(settings_element, "hue", cam_cfg.hue);
-		else settings_element->DeleteAttribute("hue");
-		if (cam_cfg.red!=SETTING_OFF) saveAttribute(settings_element, "red", cam_cfg.red);
-		else settings_element->DeleteAttribute("red");
-		if (cam_cfg.green!=SETTING_OFF) saveAttribute(settings_element, "green", cam_cfg.green);
-		else settings_element->DeleteAttribute("green");
-		if (cam_cfg.blue!=SETTING_OFF) saveAttribute(settings_element, "blue", cam_cfg.green);
-		else settings_element->DeleteAttribute("blue");
-		
-	}
+	if (shouldSaveAttribute(cam_cfg.saturation)) saveAttribute(settings_element, "saturation", cam_cfg.saturation);
+	if (shouldSaveAttribute(cam_cfg.hue)) saveAttribute(settings_element, "hue", cam_cfg.hue);
+	if (shouldSaveAttribute(cam_cfg.red)) saveAttribute(settings_element, "red", cam_cfg.red);
+	if (shouldSaveAttribute(cam_cfg.green)) saveAttribute(settings_element, "green", cam_cfg.green);
+	if (shouldSaveAttribute(cam_cfg.blue)) saveAttribute(settings_element, "blue", cam_cfg.green);
+    camera_element->LinkEndChild(settings_element);
 	
-	tinyxml2::XMLElement* frame_element = camera_element->FirstChildElement("frame");
-	if (frame_element!=NULL) {
-		
-		if (cam_cfg.frame_mode>=0) saveAttribute(frame_element, "mode", cam_cfg.frame_mode);
-		else frame_element->DeleteAttribute("mode");
-	}	
+	tinyxml2::XMLElement* frame_element = doc->NewElement("frame");
+	if (cam_cfg.frame_mode>=0) saveAttribute(frame_element, "mode", cam_cfg.frame_mode);
+    camera_element->LinkEndChild(frame_element);
+
+    std::vector<CameraConfig>::iterator iter;
+    for(iter = cam_cfg.childs.begin(); iter != cam_cfg.childs.end(); iter++)
+    {
+        tinyxml2::XMLElement* child_cam_element = doc->NewElement("child");
+        saveSettings(*iter, child_cam_element);
+        camera_element->LinkEndChild(child_cam_element);
+    }
+
+    if(!settings_element->NoChildren())
+        camera_element->DeleteChild(settings_element);
+    if(!frame_element->NoChildren())
+        camera_element->DeleteChild(frame_element);
+
 }
 
 void CameraTool::saveAttribute(tinyxml2::XMLElement* settings,const char *attribute,int config) {
@@ -682,11 +686,15 @@ void CameraTool::saveAttribute(tinyxml2::XMLElement* settings,const char *attrib
 	if (config==SETTING_MIN) settings->SetAttribute(attribute,"min");
 	else if (config==SETTING_MAX) settings->SetAttribute(attribute,"max");
 	else if (config==SETTING_AUTO) settings->SetAttribute(attribute,"auto");
-	else if (config==SETTING_DEFAULT) settings->SetAttribute(attribute,"default");
 	else {
 		char value[64];
 		sprintf(value,"%d",config);
 		settings->SetAttribute(attribute,value);
 	}
+}
+
+bool CameraTool::shouldSaveAttribute(int config)
+{
+    return config != SETTING_OFF && config != SETTING_DEFAULT;
 }
 
