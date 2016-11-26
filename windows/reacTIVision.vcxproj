@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -25,26 +25,26 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -75,12 +75,15 @@
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
@@ -88,17 +91,20 @@
     <LinkIncremental>false</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
     <LibraryPath>$(SolutionDir)..\ext\portvideo\windows\sdl\$(Platform);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;WIN32;_DEBUG;_CONSOLE;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -109,9 +115,9 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
-      <AdditionalLibraryDirectories>..\ext\portvideo\windows\sdl\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\ext\portvideo\windows\sdl\$(Platform);T:\src\reacTIVision\ext\portvideo\windows\cl\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)reacTIVision.pdb</ProgramDatabaseFile>
@@ -125,7 +131,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;WIN32;_DEBUG;_CONSOLE;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -137,9 +143,9 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
-      <AdditionalLibraryDirectories>..\ext\portvideo\windows\sdl\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\ext\portvideo\windows\videoInput\x64;..\ext\portvideo\windows\sdl\x64;..\ext\portvideo\windows\cl\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)reacTIVision.pdb</ProgramDatabaseFile>
@@ -157,7 +163,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;_CONSOLE;WIN32;NDEBUG;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -172,13 +178,13 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
       <Version>1.6</Version>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\ext\portvideo\windows\sdl\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\ext\portvideo\windows\sdl\$(Platform);T:\src\reacTIVision\ext\portvideo\windows\cl\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)reacTIVision.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <TerminalServerAware />
@@ -196,7 +202,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;_CONSOLE;WIN32;NDEBUG;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -212,13 +218,13 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;ws2_32.lib;winmm.lib;strmiids.lib;libusb-1.0.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
       <Version>1.6</Version>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\ext\portvideo\windows\videoInput\$(Platform);..\ext\portvideo\windows\sdl\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\ext\portvideo\windows\videoInput\x64;..\ext\portvideo\windows\sdl\x64;..\ext\portvideo\windows\cl\x86_64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)reacTIVision.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <TerminalServerAware>
@@ -240,6 +246,7 @@
     <ClCompile Include="..\common\FiducialFinder.cpp" />
     <ClCompile Include="..\common\FrameThresholder.cpp" />
     <ClCompile Include="..\common\Main.cpp" />
+    <ClCompile Include="..\ext\portvideo\common\CameraFrameTransformer.cpp" />
     <ClCompile Include="..\ext\portvideo\common\ConsoleInterface.cpp" />
     <ClCompile Include="..\ext\portvideo\ps3eye\ps3eye.cpp" />
     <ClCompile Include="..\ext\portvideo\ps3eye\PS3EyeCamera.cpp" />
@@ -291,7 +298,9 @@
     <ClInclude Include="..\common\FiducialObject.h" />
     <ClInclude Include="..\common\FrameThresholder.h" />
     <ClInclude Include="..\common\Main.h" />
+    <ClInclude Include="..\ext\portvideo\common\CameraFrameTransformer.h" />
     <ClInclude Include="..\ext\portvideo\common\ConsoleInterface.h" />
+    <ClInclude Include="..\ext\portvideo\opencl\CameraFrameTransformer_kernel.h" />
     <ClInclude Include="..\ext\portvideo\ps3eye\ps3eye.h" />
     <ClInclude Include="..\ext\portvideo\ps3eye\PS3EyeCamera.h" />
     <ClInclude Include="..\ext\portvideo\windows\videoInputCamera.h" />
@@ -359,6 +368,23 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="reacTIVision.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ext\portvideo\opencl\CameraFrameTransformer.cl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

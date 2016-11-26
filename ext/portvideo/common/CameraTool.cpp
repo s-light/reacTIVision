@@ -332,6 +332,8 @@ void CameraTool::initCameraConfig(CameraConfig *cfg) {
 	cfg->green = SETTING_DEFAULT;
 	
 	cfg->force = false;
+    cfg->flip_h = false;
+    cfg->flip_v = false;
 }
 
 void CameraTool::setCameraConfig(CameraConfig *cfg) {
@@ -373,6 +375,8 @@ void CameraTool::setCameraConfig(CameraConfig *cfg) {
 	cam_cfg.frame_mode = cfg->frame_mode;
 	
 	cam_cfg.force = cfg->force;
+    cam_cfg.flip_h = cfg->flip_h;
+    cam_cfg.flip_v = cfg->flip_v;
 }
 
 CameraConfig* CameraTool::readSettings(const char* cfgfile) {
@@ -468,6 +472,8 @@ CameraConfig* CameraTool::readSettings(const char* cfgfile) {
 			else cam_cfg.cam_fps = atof(image_element->Attribute("fps"));
 		}
 		if ((image_element->Attribute("force")!=NULL) && ( strcmp( image_element->Attribute("force"), "true" ) == 0 )) cam_cfg.force = true;
+        cam_cfg.flip_h = image_element->Attribute("flip_h") != NULL && strcmp(image_element->Attribute("flip_h"), "true") == 0;
+        cam_cfg.flip_v = image_element->Attribute("flip_v") != NULL && strcmp(image_element->Attribute("flip_v"), "true") == 0;
 	}
 	
 	tinyxml2::XMLElement* frame_element = camera.FirstChildElement("frame").ToElement();
@@ -579,6 +585,8 @@ void CameraTool::saveSettings() {
 		image_element->SetAttribute("width",cam_cfg.cam_width);
 		image_element->SetAttribute("height",cam_cfg.cam_height);
 		image_element->SetAttribute("fps",cam_cfg.cam_fps);
+        if(cam_cfg.flip_h) image_element->SetAttribute("flip_h", "true");
+        if(cam_cfg.flip_v) image_element->SetAttribute("flip_v", "true");
 	}
 	
 	tinyxml2::XMLElement* settings_element = camera.FirstChildElement("settings").ToElement();

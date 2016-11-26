@@ -30,6 +30,7 @@
 #include "FrameProcessor.h"
 #include "UserInterface.h"
 #include "tinyxml2.h"
+#include "CameraFrameTransformer.h"
 
 #ifdef __APPLE__
 #include <CoreFoundation/CFBundle.h>
@@ -66,6 +67,7 @@ if (c & (~255)) { if (c < 0) c = 0; else c = 255; }
 #define FORMAT_410P    15
 #define FORMAT_YVYU    16
 #define FORMAT_YUV211  17
+#define FORMAT_BAYERGRBG 18
 #define FORMAT_JPEG    20
 #define FORMAT_MJPEG   21
 #define FORMAT_MPEG    22
@@ -142,6 +144,8 @@ struct CameraConfig {
     int green;
 	
 	bool force;
+    bool flip_h;
+    bool flip_v;
 
     bool operator < (const CameraConfig& c) const {
 
@@ -218,6 +222,8 @@ protected:
     bool running;
     bool settingsDialog;
     int currentCameraSetting;
+
+    CameraFrameTransformer _transformer;
 
     void crop(int width, int height, unsigned char *src, unsigned char *dest, int bytes);
     void flip(int width, int height, unsigned char *src, unsigned char *dest, int bytes);

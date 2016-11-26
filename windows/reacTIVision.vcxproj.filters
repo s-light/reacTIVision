@@ -189,6 +189,9 @@
     <ClCompile Include="..\ext\portvideo\ps3eye\PS3EyeCamera.cpp">
       <Filter>Source Files\portvideo</Filter>
     </ClCompile>
+    <ClCompile Include="..\ext\portvideo\common\CameraFrameTransformer.cpp">
+      <Filter>Source Files\portvideo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\CalibrationEngine.h">
@@ -377,6 +380,12 @@
     <ClInclude Include="..\ext\portvideo\ps3eye\PS3EyeCamera.h">
       <Filter>Header Files\portvideo</Filter>
     </ClInclude>
+    <ClInclude Include="..\ext\portvideo\common\CameraFrameTransformer.h">
+      <Filter>Header Files\portvideo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\portvideo\opencl\CameraFrameTransformer_kernel.h">
+      <Filter>Header Files\portvideo</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="camera.xml">
@@ -395,5 +404,10 @@
     <ResourceCompile Include="reacTIVision.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ext\portvideo\opencl\CameraFrameTransformer.cl">
+      <Filter>Source Files\portvideo</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

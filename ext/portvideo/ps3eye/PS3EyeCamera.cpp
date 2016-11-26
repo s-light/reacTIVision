@@ -169,17 +169,21 @@ bool PS3EyeCamera::initCamera() {
 	} else return false;
 	
     // init camera
-    eye->init( cfg->cam_width, cfg->cam_height, cfg->cam_fps, PS3EYECam::EOutputFormat::RGB);
+    eye->init( cfg->cam_width, cfg->cam_height, cfg->cam_fps, PS3EYECam::EOutputFormat::Bayer);
 	raw_buffer = new uint8_t[eye->getWidth() * eye->getHeight() * eye->getOutputBytesPerPixel()];
 
+    cfg->cam_format = FORMAT_BAYERGRBG;
     cfg->cam_width = eye->getWidth();
     cfg->cam_height = eye->getHeight();
     cfg->cam_fps = eye->getFrameRate();
-    
+
     // do the rest
     setupFrame();
     if (cfg->frame) cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
     else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->buf_format];
+
+    _transformer.init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+
     return true;
 }
 
@@ -212,20 +216,21 @@ bool PS3EyeCamera::closeCamera() {
 unsigned char*  PS3EyeCamera::getFrame() {
 
 	eye->getFrame(raw_buffer);
+    _transformer.transform(raw_buffer, cam_buffer);
 
-	if(cfg->color) {
-		if(cfg->frame)
-			crop(cfg->cam_width, cfg->cam_height, (unsigned char *)raw_buffer, cam_buffer, 3);
-		else
-			return raw_buffer;
-	}
-	else {
-		if(cfg->frame)
-			crop_rgb2gray(cfg->cam_width, (unsigned char *)raw_buffer, cam_buffer);
-		else
-			rgb2gray(cfg->cam_width, cfg->cam_height, (unsigned char *)raw_buffer, cam_buffer);
-	}
-    
+	//if(cfg->color) {
+	//	if(cfg->frame)
+	//		crop(cfg->cam_width, cfg->cam_height, (unsigned char *)raw_buffer, cam_buffer, 3);
+	//	else
+	//		return raw_buffer;
+	//}
+	//else {
+	//	if(cfg->frame)
+	//		crop_rgb2gray(cfg->cam_width, (unsigned char *)raw_buffer, cam_buffer);
+	//	else
+	//		rgb2gray(cfg->cam_width, cfg->cam_height, (unsigned char *)raw_buffer, cam_buffer);
+	//}
+ 
     return cam_buffer;
 }
 
