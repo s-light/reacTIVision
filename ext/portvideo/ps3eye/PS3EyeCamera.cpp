@@ -24,6 +24,7 @@ PS3EyeCamera::PS3EyeCamera(CameraConfig* cam_cfg):CameraEngine(cam_cfg) {
 	cam_buffer = NULL;
 	cam_cfg->driver = DRIVER_PS3EYE;
 	raw_buffer = NULL;
+    calibration = false;
 }
 
 PS3EyeCamera::~PS3EyeCamera() {
@@ -182,7 +183,7 @@ bool PS3EyeCamera::initCamera() {
     if (cfg->frame) cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
     else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->buf_format];
 
-    _transformer.init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+    _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
 
     return true;
 }
@@ -216,7 +217,7 @@ bool PS3EyeCamera::closeCamera() {
 unsigned char*  PS3EyeCamera::getFrame() {
 
 	eye->getFrame(raw_buffer);
-    _transformer.transform(raw_buffer, cam_buffer);
+    _transformer.Transform(raw_buffer, cam_buffer);
 
 	//if(cfg->color) {
 	//	if(cfg->frame)
@@ -457,4 +458,23 @@ int PS3EyeCamera::getDefaultCameraSetting(int mode) {
             return 128;
     }
     return 0;
+}
+
+void PS3EyeCamera::control(unsigned char key)
+{
+    if(key == KEY_C)
+    {
+        if(calibration)
+        {
+            calibration = false;
+            _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+        }
+        else
+        {
+            calibration = true;
+            _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v, false);
+        }
+    }
+
+    CameraEngine::control(key);
 }

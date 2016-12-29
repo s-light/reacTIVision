@@ -104,7 +104,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;..\ext\portvideo\transform;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;WIN32;_DEBUG;_CONSOLE;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -131,7 +131,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;..\ext\portvideo\transform;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;WIN32;_DEBUG;_CONSOLE;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -163,7 +163,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;..\ext\portvideo\transform;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;_CONSOLE;WIN32;NDEBUG;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -202,7 +202,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ext\tuio;..\ext\portvideo\tinyxml;..\common;..\ext\libfidtrack;..\ext\oscpack\osc;..\ext\oscpack;..\ext\portvideo\common;..\ext\portvideo\interface;..\ext\portvideo\ps3eye;..\ext\portvideo\windows\sdl\include;..\ext\portvideo\windows\cl\include;..\ext\portvideo\windows;..\ext\portvideo\transform;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;_CONSOLE;WIN32;NDEBUG;OSC_HOST_LITTLE_ENDIAN=1;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -246,10 +246,10 @@
     <ClCompile Include="..\common\FiducialFinder.cpp" />
     <ClCompile Include="..\common\FrameThresholder.cpp" />
     <ClCompile Include="..\common\Main.cpp" />
-    <ClCompile Include="..\ext\portvideo\common\CameraFrameTransformer.cpp" />
     <ClCompile Include="..\ext\portvideo\common\ConsoleInterface.cpp" />
     <ClCompile Include="..\ext\portvideo\ps3eye\ps3eye.cpp" />
     <ClCompile Include="..\ext\portvideo\ps3eye\PS3EyeCamera.cpp" />
+    <ClCompile Include="..\ext\portvideo\transform\CameraFrameTransformer.cpp" />
     <ClCompile Include="..\ext\portvideo\windows\videoInputCamera.cpp" />
     <ClCompile Include="..\ext\portvideo\interface\Resources.c" />
     <ClCompile Include="..\ext\portvideo\interface\SDLinterface.cpp" />
@@ -298,11 +298,11 @@
     <ClInclude Include="..\common\FiducialObject.h" />
     <ClInclude Include="..\common\FrameThresholder.h" />
     <ClInclude Include="..\common\Main.h" />
-    <ClInclude Include="..\ext\portvideo\common\CameraFrameTransformer.h" />
     <ClInclude Include="..\ext\portvideo\common\ConsoleInterface.h" />
-    <ClInclude Include="..\ext\portvideo\opencl\CameraFrameTransformer_kernel.h" />
     <ClInclude Include="..\ext\portvideo\ps3eye\ps3eye.h" />
     <ClInclude Include="..\ext\portvideo\ps3eye\PS3EyeCamera.h" />
+    <ClInclude Include="..\ext\portvideo\transform\CameraFrameTransformer.h" />
+    <ClInclude Include="..\ext\portvideo\transform\CameraFrameTransformer_kernel.h" />
     <ClInclude Include="..\ext\portvideo\windows\videoInputCamera.h" />
     <ClInclude Include="..\ext\portvideo\interface\SDLinterface.h" />
     <ClInclude Include="..\ext\portvideo\interface\Resources.h" />
@@ -370,20 +370,10 @@
     <ResourceCompile Include="reacTIVision.rc" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\ext\portvideo\opencl\CameraFrameTransformer.cl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+    <CustomBuild Include="..\ext\portvideo\transform\CameraFrameTransformer.cl">
       <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\bin2h.exe -c kernel_source &lt; %(Identity) &gt;%(RelativeDir)%(Filename)_kernel.h</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RelativeDir)%(Filename)_kernel.h;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

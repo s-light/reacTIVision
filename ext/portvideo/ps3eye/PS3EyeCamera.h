@@ -55,10 +55,12 @@ public:
     int getDefaultCameraSetting(int mode);
     bool hasCameraSetting(int mode);
     bool hasCameraSettingAuto(int mode);
+    void control(unsigned char key);
 
 private:
     ps3eye::PS3EYECam::PS3EYERef eye;
 	uint8_t* raw_buffer;
+    bool calibration;
 };
 
 #endif

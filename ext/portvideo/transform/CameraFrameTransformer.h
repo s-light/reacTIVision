@@ -26,30 +26,37 @@
 #include <vector>
 #include <iostream>
 #include <assert.h>
-
+#include <CalibrationGrid.h>
+#include "floatpoint.h"
 
 class CameraFrameTransformer
 {
 public:
-    void init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v);
-    void transform(unsigned char* src, unsigned char* dst);
+    CameraFrameTransformer();
+    ~CameraFrameTransformer();
+    void Init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool correct_distortion = true, char* calib_grid_file = NULL);
+    void Transform(unsigned char* src, unsigned char* dst);
 
 private:
     cl::Context _context;
     cl::Program _program;
     cl::Device _device;
     cl::CommandQueue _queue;
+    cl::NDRange _workItemRange;
 
     cl::Kernel _kernel;
     cl::Buffer _bufferSrc;
     cl::Buffer _bufferDst;
+    cl::Buffer _bufferDmap;
 
     int _bufferSrcSize;
     int _bufferDstSize;
+    int _bufferDmapSize;
 
-    cl::NDRange _workItemRange;
+    short* _Dmap;
 
-    void build_kernel_options(char* options, int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v);
+    void ComputeDmap(int dst_width, int dst_height, int src_width, int src_height, char* calib_grid_path);
+    static void BuildKernelOptions(char* options, int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool use_dmap);
 };
 
 #endif

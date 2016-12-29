@@ -550,6 +550,8 @@ void CameraEngine::setupFrame() {
 
         cfg->frame_width = cfg->cam_width;
         cfg->frame_height = cfg->cam_height;
+        cfg->frame_xoff = 0;
+        cfg->frame_yoff = 0;
         cfg->frame = false;
         return;
     }

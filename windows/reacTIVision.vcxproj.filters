@@ -189,7 +189,7 @@
     <ClCompile Include="..\ext\portvideo\ps3eye\PS3EyeCamera.cpp">
       <Filter>Source Files\portvideo</Filter>
     </ClCompile>
-    <ClCompile Include="..\ext\portvideo\common\CameraFrameTransformer.cpp">
+    <ClCompile Include="..\ext\portvideo\transform\CameraFrameTransformer.cpp">
       <Filter>Source Files\portvideo</Filter>
     </ClCompile>
   </ItemGroup>
@@ -380,10 +380,10 @@
     <ClInclude Include="..\ext\portvideo\ps3eye\PS3EyeCamera.h">
       <Filter>Header Files\portvideo</Filter>
     </ClInclude>
-    <ClInclude Include="..\ext\portvideo\common\CameraFrameTransformer.h">
+    <ClInclude Include="..\ext\portvideo\transform\CameraFrameTransformer.h">
       <Filter>Header Files\portvideo</Filter>
     </ClInclude>
-    <ClInclude Include="..\ext\portvideo\opencl\CameraFrameTransformer_kernel.h">
+    <ClInclude Include="..\ext\portvideo\transform\CameraFrameTransformer_kernel.h">
       <Filter>Header Files\portvideo</Filter>
     </ClInclude>
   </ItemGroup>
@@ -406,7 +406,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\ext\portvideo\opencl\CameraFrameTransformer.cl">
+    <CustomBuild Include="..\ext\portvideo\transform\CameraFrameTransformer.cl">
       <Filter>Source Files\portvideo</Filter>
     </CustomBuild>
   </ItemGroup>
