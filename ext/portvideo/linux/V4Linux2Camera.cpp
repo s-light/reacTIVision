@@ -38,7 +38,6 @@ V4Linux2Camera::V4Linux2Camera(CameraConfig *cam_cfg) : CameraEngine(cam_cfg)
 V4Linux2Camera::~V4Linux2Camera(void)
 {
     CameraTool::saveSettings();
-    if ((pixelformat == V4L2_PIX_FMT_MJPEG) || (pixelformat == V4L2_PIX_FMT_JPEG)) tjDestroy(_jpegDecompressor);
     if (cam_buffer!=NULL) delete []cam_buffer;
     cam_buffer = NULL;
     if (frm_buffer!=NULL) delete []frm_buffer;
@@ -360,10 +359,10 @@ bool V4Linux2Camera::initCamera() {
     }
 
     setupFrame();
-    if (cfg->frame) frm_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
-    cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->buf_format];
+    cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
     buffers_initialized = true;
-    return true;
+    
+    return _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
 }
 
 bool V4Linux2Camera::startCamera() {
@@ -404,83 +403,15 @@ unsigned char* V4Linux2Camera::getFrame()  {
 
     unsigned char *raw_buffer = (unsigned char*)buffers[v4l2_buf.index].start;
     if (raw_buffer==NULL) return NULL;
-
-    if(cfg->color) {
-        if (cfg->frame) {
-         if (pixelformat==V4L2_PIX_FMT_YUYV)
-            crop_yuyv2rgb(cfg->cam_width,raw_buffer,frm_buffer);
-         else if (pixelformat==V4L2_PIX_FMT_UYVY)
-            crop_uyvy2rgb(cfg->cam_width,raw_buffer,frm_buffer);
-         else if (pixelformat==V4L2_PIX_FMT_YUV420) { //TODO
-         } else if (pixelformat==V4L2_PIX_FMT_YUV410) { //TODO
-         } else if (pixelformat==V4L2_PIX_FMT_GREY)
-            crop_gray2rgb(cfg->cam_width,raw_buffer, frm_buffer);
-         else if ((pixelformat == V4L2_PIX_FMT_MJPEG) || (pixelformat == V4L2_PIX_FMT_JPEG)) {
-                int jpegSubsamp;
-                tjDecompressHeader2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, &cfg->cam_width, &cfg->cam_height, &jpegSubsamp);
-                tjDecompress2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, cam_buffer, cfg->cam_width, 0, cfg->cam_height, TJPF_RGB, TJFLAG_FASTDCT);
-                crop(cfg->cam_width, cfg->cam_height,cam_buffer,frm_buffer,3);
-         }
-
-        } else {
-         if (pixelformat==V4L2_PIX_FMT_YUYV)
-            yuyv2rgb(cfg->cam_width,cfg->cam_height,raw_buffer,cam_buffer);
-         else if (pixelformat==V4L2_PIX_FMT_UYVY)
-            uyvy2rgb(cfg->cam_width,cfg->cam_height,raw_buffer,cam_buffer);
-         else if (pixelformat==V4L2_PIX_FMT_YUV420) { //TODO
-         } else if (pixelformat==V4L2_PIX_FMT_YUV410) { //TODO
-         } else if (pixelformat==V4L2_PIX_FMT_GREY)
-            gray2rgb(cfg->cam_width,cfg->cam_height,raw_buffer,cam_buffer);
-         else if ((pixelformat == V4L2_PIX_FMT_MJPEG) || (pixelformat == V4L2_PIX_FMT_JPEG)) {
-                int jpegSubsamp;
-                tjDecompressHeader2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, &cfg->cam_width, &cfg->cam_height, &jpegSubsamp);
-                tjDecompress2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, cam_buffer, cfg->cam_width, 0, cfg->cam_height, TJPF_RGB, TJFLAG_FASTDCT);
-         }
-
-        }
-
-    } else {
-        if (cfg->frame) {
-            if (pixelformat==V4L2_PIX_FMT_YUYV)
-                crop_yuyv2gray(cfg->cam_width,raw_buffer,frm_buffer);
-            else if (pixelformat==V4L2_PIX_FMT_UYVY)
-                crop_uyvy2gray(cfg->cam_width,raw_buffer,frm_buffer);
-            else if (pixelformat==V4L2_PIX_FMT_YUV420)
-                crop(cfg->cam_width, cfg->cam_height,raw_buffer,frm_buffer,1);
-            else if (pixelformat==V4L2_PIX_FMT_YUV410)
-                crop(cfg->cam_width, cfg->cam_height,raw_buffer,frm_buffer,1);
-            else if (pixelformat==V4L2_PIX_FMT_GREY)
-                crop(cfg->cam_width, cfg->cam_height,raw_buffer,frm_buffer,1);
-            else if ((pixelformat == V4L2_PIX_FMT_MJPEG) || (pixelformat == V4L2_PIX_FMT_JPEG)) {
-
-                int jpegSubsamp;
-                tjDecompressHeader2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, &cfg->cam_width, &cfg->cam_height, &jpegSubsamp);
-                tjDecompress2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, cam_buffer, cfg->cam_width, 0, cfg->cam_height, TJPF_GRAY, TJFLAG_FASTDCT);
-                crop(cfg->cam_width, cfg->cam_height,cam_buffer,frm_buffer,1);
-            }
-        } else {
-            if (pixelformat==V4L2_PIX_FMT_YUYV) yuyv2gray(cfg->cam_width, cfg->cam_height, raw_buffer, cam_buffer);
-            else if (pixelformat==V4L2_PIX_FMT_UYVY) uyvy2gray(cfg->cam_width, cfg->cam_height, raw_buffer, cam_buffer);
-            else if (pixelformat==V4L2_PIX_FMT_YUV420) memcpy(cam_buffer,raw_buffer,cfg->cam_width*cfg->cam_height);
-            else if (pixelformat==V4L2_PIX_FMT_YUV410) memcpy(cam_buffer,raw_buffer,cfg->cam_width*cfg->cam_height);
-            //else if (pixelformat==V4L2_PIX_FMT_GREY) memcpy(cam_buffer,raw_buffer,cam_width*cam_height);
-            else if ((pixelformat == V4L2_PIX_FMT_MJPEG) || (pixelformat == V4L2_PIX_FMT_JPEG)) {
-
-                int jpegSubsamp;
-                tjDecompressHeader2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, &cfg->cam_width, &cfg->cam_height, &jpegSubsamp);
-                tjDecompress2(_jpegDecompressor, raw_buffer, v4l2_buf.bytesused, cam_buffer, cfg->cam_width, 0, cfg->cam_height, TJPF_GRAY, TJFLAG_FASTDCT);
-            }
-        }
-    }
-
+    
+    _transformer.Transform(raw_buffer, cam_buffer);
+    
     if (-1 == ioctl (dev_handle, VIDIOC_QBUF, &v4l2_buf)) {
         printf("cannot unqueue buffer: %s\n", strerror(errno));
         return NULL;
     }
-
-    if (cfg->frame) return frm_buffer;
-    else if ((!cfg->color) && (pixelformat==V4L2_PIX_FMT_GREY)) return raw_buffer;
-    else return cam_buffer;
+    
+    return cam_buffer;
 }
 
 bool V4Linux2Camera::stopCamera() {

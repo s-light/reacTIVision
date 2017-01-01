@@ -99,7 +99,7 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
         #if SRC_FORMAT == DST_FORMAT
 
             for(int j = 0; j <= SRC_FORMAT_PIXEL_SIZE; j++)
-                writer[0] = reader->rbuf[0];
+                writer[0] = offset_reader.rbuf[0];
 
         #elif SRC_FORMAT == FORMAT_RGB && DST_FORMAT == FORMAT_GRAY
 

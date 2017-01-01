@@ -21,12 +21,17 @@
 
 //deaktivating OpenCL1.2 was necessary to build the project
 #include <CL/cl.h>
+
+#if WIN32
 #undef CL_VERSION_1_2
+#endif
+
 #include <CL/cl.hpp>
 #include <vector>
 #include <iostream>
 #include <assert.h>
 #include <CalibrationGrid.h>
+#include <turbojpeg.h>
 #include "floatpoint.h"
 
 class CameraFrameTransformer
@@ -34,7 +39,7 @@ class CameraFrameTransformer
 public:
     CameraFrameTransformer();
     ~CameraFrameTransformer();
-    void Init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool correct_distortion = true, char* calib_grid_file = NULL);
+    bool Init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool correct_distortion = true, const char* calib_grid_file = NULL);
     void Transform(unsigned char* src, unsigned char* dst);
 
 private:
@@ -53,9 +58,13 @@ private:
     int _bufferDstSize;
     int _bufferDmapSize;
 
-    short* _Dmap;
+    short* _dmap;
+    tjhandle _jpegDecompressor;
+    bool _useJPEGDecompressor;
+    unsigned char* _jpegBuf;
+    int _jpegPixelFormat;
 
-    void ComputeDmap(int dst_width, int dst_height, int src_width, int src_height, char* calib_grid_path);
+    void ComputeDmap(int dst_width, int dst_height, int src_width, int src_height, const char* calib_grid_path);
     static void BuildKernelOptions(char* options, int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool use_dmap);
 };
 

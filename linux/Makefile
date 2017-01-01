@@ -1,7 +1,7 @@
 TARGET = reacTIVision
 CSOURCES = $(shell ls ../ext/libfidtrack/*.c ../ext/portvideo/interface/*.c)
 COBJECTS = $(CSOURCES:.c=.o)
-CPPSOURCES = $(shell ls ../common/*.cpp ../ext/libfidtrack/*.cpp ../ext/portvideo/linux/*.cpp ../ext/portvideo/common/*.cpp ../ext/portvideo/interface/*.cpp ../ext/portvideo/tinyxml/*.cpp ../ext/tuio/*.cpp)
+CPPSOURCES = $(shell ls ../common/*.cpp ../ext/libfidtrack/*.cpp ../ext/portvideo/linux/*.cpp ../ext/portvideo/common/*.cpp ../ext/portvideo/interface/*.cpp ../ext/portvideo/tinyxml/*.cpp ../ext/tuio/*.cpp ../ext/portvideo/transform/*.cpp)
 CPPOBJECTS = $(CPPSOURCES:.cpp=.o)
 OSCSOURCES = $(shell ls ../ext/oscpack/ip/posix/*.cpp ../ext/oscpack/osc/*.cpp)
 OSCOBJECTS = $(OSCSOURCES:.cpp=.o)
@@ -9,16 +9,23 @@ OSCOBJECTS = $(OSCSOURCES:.cpp=.o)
 SDL_CFLAGS  := $(shell sdl2-config --cflags)
 SDL_LDFLAGS := $(shell sdl2-config --libs)
 
-INCLUDES = -I../ext/oscpack -I../ext/libfidtrack -I../ext/portvideo/linux -I../ext/portvideo/common -I../ext/portvideo/interface -I../ext/portvideo/tinyxml -I../common -I../ext/tuio
-COPTS  = -Ofast -w
-CDEBUG = -Wall -g
-CFLAGS = $(COPTS) $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DOSC_HOST_LITTLE_ENDIAN -DNDEBUG
-#CFLAGS = $(CDEBUG) $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DOSC_HOST_LITTLE_ENDIAN
-CXXFLAGS = $(CFLAGS)
+INCLUDES = -I../ext/oscpack -I../ext/libfidtrack -I../ext/portvideo/linux -I../ext/portvideo/common -I../ext/portvideo/interface -I../ext/portvideo/tinyxml -I../common -I../ext/tuio -I../ext/portvideo/transform
+CFLAGS_REL = -Ofast -w $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DOSC_HOST_LITTLE_ENDIAN -DNDEBUG
+CFLAGS_DBG = -Wall -g $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DOSC_HOST_LITTLE_ENDIAN -DDEBUG
+all: CFLAGS = $(CFLAGS_REL)
+all: CXXFLAGS = $(CFLAGS_REL)
+debug: CFLAGS = $(CFLAGS_DBG)
+debug: CXXFLAGS = $(CFLAGS_DBG)
 
-LIBS = $(SDL_LDFLAGS) -ldc1394 -lpthread -lturbojpeg
+LIBS = $(SDL_LDFLAGS) -ldc1394 -lpthread -lturbojpeg -lOpenCL
 
-all:	$(TARGET)
+pre-build:
+	@echo Generating CameraFrameTransformer_kernel.h
+	@./bin2h.py ../ext/portvideo/transform/CameraFrameTransformer.cl ../ext/portvideo/transform/CameraFrameTransformer_kernel.h kernel_source
+
+all: pre-build $(TARGET)
+
+debug: pre-build $(TARGET)
 
 %.o: %.cpp
 	@echo [CXX] $@
@@ -31,6 +38,9 @@ $(TARGET) : $(CPPOBJECTS) $(OSCOBJECTS) $(COBJECTS)
 	@echo [LD] $@
 	@ $(CXX) -o $@ $+ $(LIBS)
 #	strip $(TARGET)
+
+../ext/portvideo/transform/CameraFrameTransformer.o: \
+ ../ext/portvideo/transform/CameraFrameTransformer_kernel.h
 
 clean:
 	@echo [CLEAN] $(TARGET)
