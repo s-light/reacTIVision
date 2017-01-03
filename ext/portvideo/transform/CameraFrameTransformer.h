@@ -43,6 +43,12 @@ public:
     void Transform(unsigned char* src, unsigned char* dst);
 
 private:
+#if WIN32
+    HANDLE mtx;
+#else
+    pthread_mutex_t mtx;
+#endif
+
     cl::Context _context;
     cl::Program _program;
     cl::Device _device;
@@ -63,6 +69,9 @@ private:
     bool _useJPEGDecompressor;
     unsigned char* _jpegBuf;
     int _jpegPixelFormat;
+
+    void lock();
+    void unlock();
 
     void ComputeDmap(int dst_width, int dst_height, int src_width, int src_height, const char* calib_grid_path);
     static void BuildKernelOptions(char* options, int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool use_dmap);

@@ -34,58 +34,15 @@ bool FiducialFinder::init(int w, int h, int sb ,int db) {
 }
 
 void FiducialFinder::computeGrid() {
-	
-	// load the distortion grid
-	grid_size_x = 7;
-	if (((float)width/height) > 1.3) grid_size_x +=2;
-	if (((float)width/height) > 1.7) grid_size_x +=2;
-	grid_size_y = 7;
-	
-	cell_width = width/(grid_size_x-1);
-	cell_height = height/(grid_size_y-1);
-	
-	CalibrationGrid grid(grid_size_x,grid_size_y);
-	grid.Load(grid_config);
-	
-	// we do not calculate the matrix if the grid is not configured
-	if (grid.IsEmpty()) {
-		empty_grid = true;
-		for (int y=0;y<height;y++) {
-			for (int x=0;x<width;x++) {
-				dmap[y*width+x].x = x;
-				dmap[y*width+x].y = y;
-			}
-		}
-		return;
-	} else empty_grid = false;
-	
-	//ui->displayMessage("computing distortion matrix ...");
-	// reset the distortion matrix
-	for (int y=0;y<height;y++) {
-		for (int x=0;x<width;x++) {
-			dmap[y*width+x].x = 0;
-			dmap[y*width+x].y = 0;
-		}
-	}
-	
-	// calculate the distortion matrix
-	for (float y=0;y<height;y+=0.5) {
-		for (float x=0;x<width;x+=0.5) {
-			
-			// get the displacement
-			GridPoint new_point =  grid.GetInterpolated(x/cell_width,y/cell_height);
-			
-			// apply the displacement
-			short dx = (short)floor(x+0.5f+new_point.x*cell_width);
-			short dy = (short)floor(y+0.5f+new_point.y*cell_height);
-			
-			int pixel =  dy*width+dx;
-			if ((dx>=0) && (dx<width) && (dy>=0) && (dy<height)) {
-				dmap[pixel].x = (short)x;
-				dmap[pixel].y = (short)y;
-			}
-		}
-	}
+    //TODO: Remove dmap from FiducialFinder and FidtrackFinder
+    //TODO: Is the class FiducialFinder still needed ?
+    for(int y = 0; y < height; y++) {
+        for(int x = 0; x < width; x++) {
+            int pixel = y*width + x;
+            dmap[pixel].x = (short)x;
+            dmap[pixel].y = (short)y;
+        }
+    }
 }
 
 bool FiducialFinder::toggleFlag(unsigned char flag, bool lock) {
