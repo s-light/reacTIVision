@@ -345,7 +345,8 @@ void VisionEngine::initFrameProcessors() {
             
     		(*frame)->addUserInterface(interface_);
             frame++;
-        }  else processorList.erase( frame );
+        }  else 
+            frame = processorList.erase( frame );
     }
     
     interface_->setHelpText(help_text);
