@@ -79,7 +79,7 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
     pixel_reader reader;
     pt_init(&reader, src, ROW_OFFSET, COL_OFFSET);
 
-    __global uchar* writer = dst + DST_WIDTH * row * DST_FORMAT_PIXEL_SIZE;
+    __global uchar* write = dst + DST_WIDTH * row * DST_FORMAT_PIXEL_SIZE;
 
 #if DMAP
     __global short* read_offset = dmap + row * DST_WIDTH;
@@ -98,22 +98,22 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
 
         #if SRC_FORMAT == DST_FORMAT
 
-            for(int j = 0; j <= SRC_FORMAT_PIXEL_SIZE; j++)
-                writer[0] = offset_reader.rbuf[0];
-
+            for(int j = 0; j < SRC_FORMAT_PIXEL_SIZE; j++)
+                write[j] = offset_reader.rbuf[j];
+            
         #elif SRC_FORMAT == FORMAT_RGB && DST_FORMAT == FORMAT_GRAY
 
             R = offset_reader.rbuf[0];
             G = offset_reader.rbuf[1];
             B = offset_reader.rbuf[2];
 
-            writer->wbuf[0] = (R * 77 + G * 151 + B * 28) >> 8;
+            write[0] = (R * 77 + G * 151 + B * 28) >> 8;
 
         #elif SRC_FORMAT == FORMAT_GRAY && DST_FORMAT == FORMAT_RGB
 
-            writer[0] = offset_reader.rbuf[0];
-            writer[1] = offset_reader.rbuf[0];
-            writer[2] = offset_reader.rbuf[0];
+            write[0] = offset_reader.rbuf[0];
+            write[1] = offset_reader.rbuf[0];
+            write[2] = offset_reader.rbuf[0];
 
         #elif SRC_FORMAT == FORMAT_BAYERGRBG
 
@@ -160,17 +160,17 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
             }
 
             #if DST_FORMAT == FORMAT_GRAY
-                writer[0] = (R * 77 + (G+G2)/2 * 151 + B * 28) >> 8;
+                write[0] = (R * 77 + (G + G2)/2 * 151 + B * 28) >> 8;
             #elif DST_FORMAT == FORMAT_RGB
-                writer[0] = R;
-                writer[0] = (G + G2 / 2;
-                writer[0] = B;
+                write[0] = R;
+                write[1] = (G + G2) / 2;
+                write[2] = B;
             #endif
 
         #endif  
 
         pt_next(&reader);
-        writer += DST_FORMAT_PIXEL_SIZE;
+        write += DST_FORMAT_PIXEL_SIZE;
 
 #if DMAP
         read_offset++;

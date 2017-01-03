@@ -313,10 +313,10 @@ bool videoInputCamera::initCamera() {
 
 	setupFrame();
 
-	if (cfg->frame) cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->src_format];
-	else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->src_format];
+    if(cfg->frame) cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
+    else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->buf_format];
 
-	return true;
+    return _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
 }
 
 HRESULT videoInputCamera::setupDevice() {
@@ -423,7 +423,7 @@ HRESULT videoInputCamera::setupDevice() {
 
 	VIDEOINFOHEADER *pVih =  reinterpret_cast<VIDEOINFOHEADER*>(pAmMediaType->pbFormat);
 	cfg->cam_width	=  HEADER(pVih)->biWidth;
-	cfg->cam_height	=  HEADER(pVih)->biHeight;
+    cfg->cam_height = HEADER(pVih)->biHeight;
 	cfg->cam_fps = ((int)floor(100000000.0f/(float)pVih->AvgTimePerFrame + 0.5f))/10.0f;
 
 	long bufferSize = cfg->cam_width*cfg->cam_height*3;
@@ -671,19 +671,7 @@ unsigned char* videoInputCamera::getFrame()
 
 	if (isFrameNew()){
 
-		unsigned char * src = sgCallback->pixels;
-		unsigned char *dest = cam_buffer;
-
-		if (!cfg->color) {
-
-			if (cfg->frame) flip_crop_rgb2gray(cfg->cam_width,src,dest);
-			else flip_rgb2gray(cfg->cam_width,cfg->cam_height,src,dest);
-
-		} else {
-
-			if (cfg->frame) flip_crop(cfg->cam_width,cfg->cam_height,src,dest,cfg->buf_format);
-			else flip(cfg->cam_width,cfg->cam_height,src,dest,cfg->buf_format);
-		}
+        _transformer.Transform(sgCallback->pixels, cam_buffer);
 
 		lost_frames = 0;
 		return cam_buffer;
@@ -1391,7 +1379,7 @@ bool videoInputCamera::setSizeAndSubtype() {
 
 	VIDEOINFOHEADER *lpVih =  reinterpret_cast<VIDEOINFOHEADER*>(pAmMediaType->pbFormat);
 	HEADER(lpVih)->biWidth  = cfg->cam_width;
-	HEADER(lpVih)->biHeight = cfg->cam_height;
+    HEADER(lpVih)->biHeight = cfg->cam_height;
 
 	pAmMediaType->formattype = FORMAT_VideoInfo;
 	pAmMediaType->majortype  = MEDIATYPE_Video;

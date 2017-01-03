@@ -150,7 +150,12 @@ public:
 			latestBufferLength = pSample->GetActualDataLength();
 			if(latestBufferLength == numBytes){
 				EnterCriticalSection(&critSection);
-				memcpy(pixels, ptrBuffer, latestBufferLength);
+
+                //The RGB-Format is queried which is always bottom to top in DirectShow
+				//memcpy(pixels, ptrBuffer, latestBufferLength);
+                for(int i = 0; i < latestBufferLength; i++)
+                    pixels[i] = ptrBuffer[latestBufferLength - 1 - i];
+
 				newFrame	= true;
 				LeaveCriticalSection(&critSection);
 				SetEvent(hEvent);
