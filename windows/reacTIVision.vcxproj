@@ -247,6 +247,7 @@
     <ClCompile Include="..\common\FrameThresholder.cpp" />
     <ClCompile Include="..\common\Main.cpp" />
     <ClCompile Include="..\ext\portvideo\common\ConsoleInterface.cpp" />
+    <ClCompile Include="..\ext\portvideo\common\MultiCamera.cpp" />
     <ClCompile Include="..\ext\portvideo\ps3eye\ps3eye.cpp" />
     <ClCompile Include="..\ext\portvideo\ps3eye\PS3EyeCamera.cpp" />
     <ClCompile Include="..\ext\portvideo\transform\CameraFrameTransformer.cpp" />
@@ -299,6 +300,7 @@
     <ClInclude Include="..\common\FrameThresholder.h" />
     <ClInclude Include="..\common\Main.h" />
     <ClInclude Include="..\ext\portvideo\common\ConsoleInterface.h" />
+    <ClInclude Include="..\ext\portvideo\common\MultiCamera.h" />
     <ClInclude Include="..\ext\portvideo\ps3eye\ps3eye.h" />
     <ClInclude Include="..\ext\portvideo\ps3eye\PS3EyeCamera.h" />
     <ClInclude Include="..\ext\portvideo\transform\CameraFrameTransformer.h" />

@@ -192,6 +192,9 @@
     <ClCompile Include="..\ext\portvideo\transform\CameraFrameTransformer.cpp">
       <Filter>Source Files\portvideo</Filter>
     </ClCompile>
+    <ClCompile Include="..\ext\portvideo\common\MultiCamera.cpp">
+      <Filter>Source Files\portvideo</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\CalibrationEngine.h">
@@ -384,6 +387,9 @@
       <Filter>Header Files\portvideo</Filter>
     </ClInclude>
     <ClInclude Include="..\ext\portvideo\transform\CameraFrameTransformer_kernel.h">
+      <Filter>Header Files\portvideo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ext\portvideo\common\MultiCamera.h">
       <Filter>Header Files\portvideo</Filter>
     </ClInclude>
   </ItemGroup>
