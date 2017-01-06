@@ -384,10 +384,10 @@ void CameraTool::setCameraConfig(CameraConfig *cfg) {
 	cam_cfg.cam_fps = cfg->cam_fps;
 	
 	cam_cfg.frame = cfg->frame;
-	cam_cfg.frame_width = SETTING_MAX;
-	cam_cfg.frame_height = SETTING_MAX;
-	cam_cfg.frame_xoff = 0;
-	cam_cfg.frame_yoff = 0;
+    cam_cfg.frame_width = cfg->frame_width;
+    cam_cfg.frame_height = cfg->frame_height;
+    cam_cfg.frame_xoff = cfg->frame_xoff;
+    cam_cfg.frame_yoff = cfg->frame_yoff;
 	cam_cfg.frame_mode = cfg->frame_mode;
 	
 	cam_cfg.force = cfg->force;

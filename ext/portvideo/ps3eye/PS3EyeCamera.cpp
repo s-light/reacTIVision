@@ -28,8 +28,6 @@ PS3EyeCamera::PS3EyeCamera(CameraConfig* cam_cfg):CameraEngine(cam_cfg) {
 }
 
 PS3EyeCamera::~PS3EyeCamera() {
-	updateSettings();
-	CameraTool::saveSettings();
 	if (cam_buffer!=NULL) delete []cam_buffer;
 	if(raw_buffer != NULL) delete[] raw_buffer;
 	eye.reset();
