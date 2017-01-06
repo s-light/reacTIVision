@@ -122,7 +122,7 @@ bool FrameThresholder::init(int w, int h, int sb, int db) {
 	short tw = w;
 	short th = h/thread_count;
 
-	while (th%2!=0) {
+	while (h%thread_count !=0) {
 		thread_count--;
 		if (thread_count==1) {
 			th = h;
