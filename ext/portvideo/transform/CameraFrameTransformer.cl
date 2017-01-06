@@ -8,7 +8,7 @@
 #define ROW_OFFSET (DST_YOFF + row)
 #endif
 #if DST_FLIP_V
-#define COL_OFFSET DST_WIDTH + DST_XOFF
+#define COL_OFFSET SRC_WIDTH - DST_XOFF
 #define READ_STEP -1
 #else
 #define COL_OFFSET DST_XOFF
@@ -27,21 +27,24 @@ typedef struct pixel_reader
 void pt_init_offset(pixel_reader* reader, pixel_reader* main_reader, int offset)
 {
     reader->rbuf = main_reader->rbuf + offset;
-    reader->is_evenrow = !main_reader->is_evenrow;
-    reader->is_evencol = !main_reader->is_evencol;
+    reader->is_evenrow = main_reader->is_evenrow;
+    reader->is_evencol = main_reader->is_evencol;
 
-    int rows_added = offset / SRC_WIDTH;
-    if(rows_added != 0)
+    if(offset > 0)
     {
-        bool is_even_row_added = rows_added % 2 == 0;
-        reader->is_evenrow = reader->is_evenrow == is_even_row_added;
-    }
+        int rows_added = offset / SRC_WIDTH;
+        if(rows_added != 0)
+        {
+            bool is_even_row_added = rows_added % 2 == 0;
+            reader->is_evenrow = reader->is_evenrow == is_even_row_added;
+        }
 
-    int cols_added = offset % SRC_WIDTH;
-    if(cols_added != 0)
-    {
-        bool is_even_cols_added = cols_added % 2 == 0;
-        reader->is_evencol = reader->is_evencol == is_even_cols_added;
+        int cols_added = offset % SRC_WIDTH;
+        if(cols_added != 0)
+        {
+            bool is_even_cols_added = cols_added % 2 == 0;
+            reader->is_evencol = reader->is_evencol == is_even_cols_added;
+        }
     }
 
 #if SRC_FORMAT == FORMAT_BAYERGRBG
@@ -53,8 +56,9 @@ void pt_init_offset(pixel_reader* reader, pixel_reader* main_reader, int offset)
 void pt_init(pixel_reader* reader, __global uchar* buffer, int seek_rows, int seek_cols)
 {
     reader->rbuf = buffer + (SRC_WIDTH * seek_rows + seek_cols) * SRC_FORMAT_PIXEL_SIZE;
-    reader->is_evenrow = seek_rows != 0 && seek_rows % 2 == 0;
-    reader->is_evencol = seek_cols != 0 && seek_cols % 2 == 0;
+    //first row is odd. is an odd numer of rows added the resulting row is even
+    reader->is_evenrow = seek_rows != 0 && seek_rows % 2 != 0;
+    reader->is_evencol = seek_cols != 0 && seek_cols % 2 != 0;
 
 #if SRC_FORMAT == FORMAT_BAYERGRBG
     //rbuf2 is always one line below
@@ -93,7 +97,7 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
 #if DMAP
         pt_init_offset(&offset_reader, &reader, *read_offset);
 #else
-        offset_reader = reader;
+        pt_init_offset(&offset_reader, &reader, 0);
 #endif
 
         #if SRC_FORMAT == DST_FORMAT

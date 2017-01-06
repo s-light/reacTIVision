@@ -242,7 +242,7 @@ void CameraFrameTransformer::ComputeDmap(int dst_width, int dst_height, int src_
             short dy = (short)floor(0.5f + new_point.y*cell_height);
 
             int orig_pixel = y*dst_width + x;
-            if((x + dx >= 0) && (x + dx < src_width) && (y + dy >= 0) && (y + dy < src_height)) {
+            if((dx >= 0) && (dx < src_width) && (dy >= 0) && (dy < src_height)) {
                 short new_pixel = dy*src_width + dx;
                 _dmap[orig_pixel] = new_pixel;
             }
