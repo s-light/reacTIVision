@@ -141,7 +141,6 @@ private:
     unsigned char* destBuffer_;
     
 	std::vector<FrameProcessor*> processorList;
-	std::vector<FrameProcessor*>::iterator frame;
 
 #ifndef WIN32
     pthread_t cameraThread;

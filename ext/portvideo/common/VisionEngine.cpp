@@ -173,7 +173,7 @@ void VisionEngine::resetCamera(CameraConfig *cam_cfg) {
 		interface_->closeDisplay();
 		interface_->setBuffers(sourceBuffer_,destBuffer_,width_,height_,format_);
 		interface_->openDisplay(this);
-		for (frame = processorList.begin(); frame!=processorList.end();frame++)
+		for (std::vector<FrameProcessor*>::iterator frame = processorList.begin(); frame!=processorList.end();frame++)
 			(*frame)->init(width_ , height_, format_, format_);
 	} else interface_->displayError("Could not start camera!");
 	
@@ -232,7 +232,7 @@ void VisionEngine::mainLoop()
         //long camera_time = currentMicroSeconds()-start_time;
 
         // do the actual image processing job
-        for (frame = processorList.begin(); frame!=processorList.end(); frame++)
+        for (std::vector<FrameProcessor*>::iterator frame = processorList.begin(); frame!=processorList.end(); frame++)
             (*frame)->process(cameraReadBuffer,destBuffer_);
         //long processing_time = currentMicroSeconds()-start_time;
   
@@ -303,7 +303,7 @@ void VisionEngine::event(int key)
     
     //printf("%d\n",key);
     if (camera_) camera_->control(key);
-    for (frame = processorList.begin(); frame!=processorList.end(); frame++)
+    for (std::vector<FrameProcessor*>::iterator frame = processorList.begin(); frame!=processorList.end(); frame++)
         display_lock_ = (*frame)->toggleFlag(key,display_lock_);
     
 }
@@ -328,7 +328,7 @@ void VisionEngine::addFrameProcessor(FrameProcessor *fp) {
 
 
 void VisionEngine::removeFrameProcessor(FrameProcessor *fp) {
-    frame = std::find( processorList.begin(), processorList.end(), fp );
+    std::vector<FrameProcessor*>::iterator frame = std::find( processorList.begin(), processorList.end(), fp );
     if( frame != processorList.end() ) {
         processorList.erase( frame );
     }
@@ -337,7 +337,7 @@ void VisionEngine::removeFrameProcessor(FrameProcessor *fp) {
 void VisionEngine::initFrameProcessors() {
     
     std::vector<std::string> help_text;
-    for (frame = processorList.begin(); frame!=processorList.end(); ) {
+    for (std::vector<FrameProcessor*>::iterator frame = processorList.begin(); frame!=processorList.end(); ) {
         bool success = (*frame)->init(width_ , height_, format_, format_);
         if(success) {
             
