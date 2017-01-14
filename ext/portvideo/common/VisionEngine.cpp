@@ -162,7 +162,11 @@ void VisionEngine::resetCamera(CameraConfig *cam_cfg) {
 
 	//teardownCamera();
 	freeBuffers();
-	if (cam_cfg!=NULL) CameraTool::setCameraConfig(cam_cfg);
+    if(cam_cfg != NULL)
+    {
+        CameraTool::setCameraConfig(cam_cfg);
+        CameraTool::saveSettings();
+    }
 	setupCamera();
 	
 	if( camera_->startCamera() ) {

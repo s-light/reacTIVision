@@ -589,6 +589,7 @@ void CameraTool::readSettings(tinyxml2::XMLElement* camera_element, CameraConfig
 		}
 	}
 
+    cam_cfg.childs.clear();
 	tinyxml2::XMLElement* child_cam = camera_element->FirstChildElement("child");
 	while(child_cam != NULL)
 	{
