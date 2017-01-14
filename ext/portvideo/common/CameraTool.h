@@ -85,7 +85,7 @@ private:
     static bool shouldSaveAttribute(int config);
 
     static CameraConfig cam_cfg;
-    static char cam_cfg_path[256];
+    static char cam_cfg_path[1024];
 };
 
 #endif

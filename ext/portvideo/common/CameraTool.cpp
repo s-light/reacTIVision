@@ -22,7 +22,7 @@
 #endif
 
 CameraConfig CameraTool::cam_cfg = {};
-char CameraTool::cam_cfg_path[256];
+char CameraTool::cam_cfg_path[1024];
 
 void CameraTool::printConfig(std::vector<CameraConfig> cfg_list) {
 
@@ -393,6 +393,8 @@ void CameraTool::setCameraConfig(CameraConfig *cfg) {
 	cam_cfg.force = cfg->force;
     cam_cfg.flip_h = cfg->flip_h;
     cam_cfg.flip_v = cfg->flip_v;
+
+    cam_cfg.childs = cfg->childs;
 }
 
 void CameraTool::whereIsConfig(const char* const cfgfilename, char* cfgfile) {
