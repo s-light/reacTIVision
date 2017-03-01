@@ -1,16 +1,16 @@
 /*  portVideo, a cross platform camera framework
  Copyright (C) 2005-2016 Martin Kaltenbrunner <martin@tuio.org>
- 
+
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
  version 2.1 of the License, or (at your option) any later version.
- 
+
  This library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with this library; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -31,7 +31,7 @@ CameraFrameTransformer::CameraFrameTransformer()
     _jpegBuf = NULL;
 
 #ifdef WIN32
-    mtx = CreateMutex(NULL, FALSE, TEXT("CameraFrameTransformer")); 
+    mtx = CreateMutex(NULL, FALSE, TEXT("CameraFrameTransformer"));
 #else
     pthread_mutex_init(&mtx, NULL);
 #endif
@@ -41,7 +41,7 @@ CameraFrameTransformer::CameraFrameTransformer()
 CameraFrameTransformer::~CameraFrameTransformer()
 {
     if(_dmap != NULL) delete[] _dmap;
-    
+
     if(_useJPEGDecompressor)
     {
         tjDestroy(_jpegDecompressor);
@@ -56,35 +56,47 @@ CameraFrameTransformer::~CameraFrameTransformer()
 
 }
 
-bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool correct_distortion, const char* calib_grid_file)
-{
+bool CameraFrameTransformer::Init(
+    int src_width,
+    int src_height,
+    int src_format,
+    int dst_width,
+    int dst_height,
+    int dst_format,
+    int dst_xoff,
+    int dst_yoff,
+    bool dst_flip_h,
+    bool dst_flip_v,
+    bool correct_distortion,
+    const char* calib_grid_file
+) {
     lock();
 
     assert(src_width > 0 && src_height > 0);
     assert(dst_width > 0 && dst_height > 0);
     assert(format_pixel_size[dst_format] > 0);
-    
+
     if(_useJPEGDecompressor)
     {
         tjDestroy(_jpegDecompressor);
         delete[] _jpegBuf;
     }
-    
+
     _useJPEGDecompressor = src_format == FORMAT_JPEG || src_format == FORMAT_MJPEG;
     if(_useJPEGDecompressor)
     {
         assert(dst_format == FORMAT_GRAY || dst_format == FORMAT_RGB);
-        
+
         _jpegDecompressor = tjInitDecompress();
         _jpegBuf = new unsigned char[src_width * dst_width * format_pixel_size[dst_format]];
-        
+
         if(dst_format == FORMAT_GRAY) _jpegPixelFormat = TJPF_GRAY;
         else if(dst_format == FORMAT_RGB) _jpegPixelFormat = TJPF_RGB;
 
         //Deactivating pixel format conversation in OpenCL
-        src_format = dst_format;    
+        src_format = dst_format;
     }
-    
+
     assert(format_pixel_size[src_format] > 0);
 
     std::vector<cl::Platform> platforms;
@@ -97,7 +109,7 @@ bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format,
         unlock();
         return false;
     }
-    
+
     platforms[0].getDevices(CL_DEVICE_TYPE_DEFAULT, &devices);
     if(devices.size() <= 0)
     {
@@ -141,8 +153,25 @@ bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format,
         _dmap = NULL;
     }
 
+    #ifndef NDEBUG
+		std::cout << "dmap: " << _dmap << std::endl;
+	#endif
+
     char options[512];
-    BuildKernelOptions(options, src_width, src_height, src_format, dst_width, dst_height, dst_format, dst_xoff, dst_yoff, dst_flip_h, dst_flip_v, _dmap != NULL);
+    BuildKernelOptions(
+        options,
+        src_width,
+        src_height,
+        src_format,
+        dst_width,
+        dst_height,
+        dst_format,
+        dst_xoff,
+        dst_yoff,
+        dst_flip_h,
+        dst_flip_v,
+        _dmap != NULL
+    );
 
     if(_program.build(devices, options) != CL_SUCCESS)
         std::cout << "OpenCL error build kernel: " << _program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(_device) << std::endl;
@@ -171,7 +200,7 @@ bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format,
     }
     else
         _kernel.setArg(2, NULL);
-    
+
     unlock();
     return true;
 }
@@ -188,7 +217,7 @@ void CameraFrameTransformer::Transform(unsigned char* src, unsigned char* dst)
         tjDecompress2(_jpegDecompressor, src, _bufferSrcSize, _jpegBuf, width, 0, height, _jpegPixelFormat, TJFLAG_FASTDCT);
         src = _jpegBuf;
     }
-    
+
     _queue.enqueueWriteBuffer(_bufferSrc, CL_TRUE, 0, _bufferSrcSize, src);
     _queue.enqueueNDRangeKernel(_kernel, cl::NullRange, _workItemRange);
     _queue.enqueueReadBuffer(_bufferDst, CL_TRUE, 0, _bufferDstSize, dst);
@@ -197,11 +226,19 @@ void CameraFrameTransformer::Transform(unsigned char* src, unsigned char* dst)
     unlock();
 }
 
-void CameraFrameTransformer::ComputeDmap(int dst_width, int dst_height, int src_width, int src_height, const char* calib_grid_path)
-{
-    //_dmap is the distortionmap which tells us where to read a pixel instead of the original position.
-    //The size of _dmap depends on the destination image the offsets are based on the source image.
-    //With using _dmap on read or rather "before crop" we can move pixels outside of the destination frame into the destination frame
+void CameraFrameTransformer::ComputeDmap(
+    int dst_width,
+    int dst_height,
+    int src_width,
+    int src_height,
+    const char* calib_grid_path
+) {
+    //_dmap is the distortionmap which tells us where to read a pixel
+    // instead of the original position.
+    // The size of _dmap depends on the destination image
+    // the offsets are based on the source image.
+    // With using _dmap on read or rather "before crop" we can move pixels
+    // outside of the destination frame into the destination frame
 
     if(_dmap != NULL)
     {
@@ -222,8 +259,12 @@ void CameraFrameTransformer::ComputeDmap(int dst_width, int dst_height, int src_
     grid.Load(calib_grid_path);
 
     // we do not calculate the matrix if the grid is not configured
-    if(grid.IsEmpty())
+    if(grid.IsEmpty()) {
+        #ifndef NDEBUG
+    		std::cout << "CalibrationGrid is empty. no dmap needed." << std::endl;
+    	#endif
         return;
+    }
 
     _dmap = new short[dst_width * dst_height];
 
@@ -250,9 +291,35 @@ void CameraFrameTransformer::ComputeDmap(int dst_width, int dst_height, int src_
     }
 }
 
-void CameraFrameTransformer::BuildKernelOptions(char* options, int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool use_dmap)
-{
-    sprintf(options, "-DSRC_FORMAT=%i -DSRC_FORMAT_PIXEL_SIZE=%i -DSRC_WIDTH=%i -DSRC_HEIGHT=%i -DDST_WIDTH=%i -DDST_HEIGHT=%i -DDST_FORMAT=%i -DDST_FORMAT_PIXEL_SIZE=%i -DDST_XOFF=%i -DDST_YOFF=%i", src_format, format_pixel_size[src_format], src_width, src_height, dst_width, dst_height, dst_format, format_pixel_size[dst_format], dst_xoff, dst_yoff);
+void CameraFrameTransformer::BuildKernelOptions(
+    char* options,
+    int src_width,
+    int src_height,
+    int src_format,
+    int dst_width,
+    int dst_height,
+    int dst_format,
+    int dst_xoff,
+    int dst_yoff,
+    bool dst_flip_h,
+    bool dst_flip_v,
+    bool use_dmap
+) {
+    sprintf(
+        options,
+        "-DSRC_FORMAT=%i -DSRC_FORMAT_PIXEL_SIZE=%i -DSRC_WIDTH=%i -DSRC_HEIGHT=%i -DDST_WIDTH=%i -DDST_HEIGHT=%i -DDST_FORMAT=%i -DDST_FORMAT_PIXEL_SIZE=%i -DDST_XOFF=%i -DDST_YOFF=%i",
+        src_format,
+        format_pixel_size[src_format],
+        src_width,
+        src_height,
+        dst_width,
+        dst_height,
+        dst_format,
+        format_pixel_size[dst_format],
+        dst_xoff,
+        dst_yoff
+    );
+
     if(dst_flip_h) strcat(options, " -DDST_FLIP_H");
     if(dst_flip_v) strcat(options, " -DDST_FLIP_V");
     if(use_dmap) strcat(options, " -DDMAP");
@@ -260,18 +327,18 @@ void CameraFrameTransformer::BuildKernelOptions(char* options, int src_width, in
 
 void CameraFrameTransformer::lock()
 {
-#ifdef WIN32	
+#ifdef WIN32
     WaitForSingleObject(mtx, INFINITE);
 #else
     pthread_mutex_lock(&mtx);
-#endif		
+#endif
 }
 
 void CameraFrameTransformer::unlock()
 {
-#ifdef WIN32	
+#ifdef WIN32
     ReleaseMutex(mtx);
 #else
     pthread_mutex_unlock(&mtx);
-#endif	
-}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+#endif
+}

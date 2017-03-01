@@ -316,7 +316,22 @@ bool videoInputCamera::initCamera() {
 	if (cfg->frame) cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->src_format];
 	else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->src_format];
 
-    return _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+    return _transformer.Init(
+		cfg->cam_width,
+		cfg->cam_height,
+		cfg->cam_format,
+		cfg->frame_width,
+		cfg->frame_height,
+		cfg->buf_format,
+		cfg->frame_xoff,
+		cfg->frame_yoff,
+		cfg->flip_h,
+		cfg->flip_v
+		// correct_distortion = true,
+        // calib_grid_file = NULL
+        // TODO get calibration grid file for this camera
+        // --> new node in camera config
+	);
 }
 
 HRESULT videoInputCamera::setupDevice() {

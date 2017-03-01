@@ -40,7 +40,20 @@ class CameraFrameTransformer
 public:
     CameraFrameTransformer();
     ~CameraFrameTransformer();
-    bool Init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool correct_distortion = true, const char* calib_grid_file = NULL);
+    bool Init(
+        int src_width,
+        int src_height,
+        int src_format,
+        int dst_width,
+        int dst_height,
+        int dst_format,
+        int dst_xoff,
+        int dst_yoff,
+        bool dst_flip_h,
+        bool dst_flip_v,
+        bool correct_distortion = true,
+        const char* calib_grid_file = NULL
+    );
     void Transform(unsigned char* src, unsigned char* dst);
 
 private:

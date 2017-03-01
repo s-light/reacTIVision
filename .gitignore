@@ -18,3 +18,4 @@ nbproject/
 # ignore auto generated things
 *_kernel.h
 *.h.gch
+calibration.grid
