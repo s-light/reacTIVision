@@ -32,7 +32,7 @@ debug: pre-build $(TARGET)
 	@echo [CC] $@
 	@ $(CC) $(CFLAGS) -o $@ -c $<
 
-$(TARGET) : $(CPPOBJECTS) $(OSCOBJECTS) $(COBJECTS)
+$(TARGET) : $(CPPOBJECTS) $(COBJECTS)
 	@echo [LD] $@
 	@ $(CXX) -o $@ $+ $(LIBS)
 #	strip $(TARGET)
@@ -42,7 +42,7 @@ $(TARGET) : $(CPPOBJECTS) $(OSCOBJECTS) $(COBJECTS)
 
 clean:
 	@echo [CLEAN] $(TARGET)
-	@ rm -f $(TARGET) $(CPPOBJECTS) $(OSCOBJECTS) $(COBJECTS) core*
+	@ rm -f $(TARGET) $(CPPOBJECTS) $(COBJECTS) core*
 
 run:	$(TARGET)
 	./$(TARGET)
