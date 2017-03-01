@@ -14,7 +14,7 @@ project.xcworkspace
 *.o
 linux/reacTIVision
 ext/portvideo/linux/SportVideo
-nbproject
+nbproject/
 # ignore auto generated things
 *_kernel.h
 *.h.gch
