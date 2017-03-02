@@ -14,4 +14,4 @@ project.xcworkspace
 *.o
 linux/reacTIVision
 ext/portvideo/linux/SportVideo
-nbproject
+nbproject/

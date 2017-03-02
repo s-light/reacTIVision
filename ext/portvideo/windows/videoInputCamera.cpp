@@ -515,7 +515,7 @@ HRESULT videoInputCamera::setupDevice() {
 
 	//EXP - lets try setting the sync source to null - and make it run as fast as possible
 	{
-		IMediaFilter *pMediaFilter = 0;
+		IMediaFilter *pMediaFilter = NULL;
 		hr = pGraphBuilder->QueryInterface(IID_IMediaFilter, (void**)&pMediaFilter);
 		if (FAILED(hr)){
 			printf("ERROR: Could not get IID_IMediaFilter interface\n");
@@ -617,7 +617,7 @@ HRESULT videoInputCamera::stopDevice() {
 }
 
 bool videoInputCamera::startCamera()
-{ 
+{
 	HRESULT hr = pMediaControl->Run();
 
 	if (FAILED(hr)){
@@ -852,7 +852,7 @@ bool videoInputCamera::getCameraSettingAuto(int mode) {
 	case SATURATION: getVideoSettingValue(VideoProcAmp_Saturation, value, flags); break;
 	case COLOR_HUE: getVideoSettingValue(VideoProcAmp_Hue, value, flags); break;
 	default: return false;
-	} 
+	}
 
 	if (flags==VideoProcAmp_Flags_Auto) return true;
 	else return false;
@@ -902,7 +902,7 @@ int videoInputCamera::getCameraSetting(int mode) {
 	case SATURATION: getVideoSettingValue(VideoProcAmp_Saturation, value, flags); break;
 	case COLOR_HUE: getVideoSettingValue(VideoProcAmp_Hue, value, flags); break;
 	default: return 0;
-	} 
+	}
 
 	return (int)value;
 }
@@ -925,7 +925,7 @@ int videoInputCamera::getMaxCameraSetting(int mode) {
 	case SATURATION: getVideoSettingRange(VideoProcAmp_Saturation, min, max, step, flag, dflt); break;
 	case COLOR_HUE: getVideoSettingRange(VideoProcAmp_Hue, min, max, step, flag, dflt); break;
 	default: return 0;
-	} 
+	}
 
 	return (int)max;
 }
@@ -948,7 +948,7 @@ int videoInputCamera::getMinCameraSetting(int mode) {
 	case SATURATION: getVideoSettingRange(VideoProcAmp_Saturation, min, max, step, flag, dflt); break;
 	case COLOR_HUE: getVideoSettingRange(VideoProcAmp_Hue, min, max, step, flag, dflt); break;
 	default: return 0;
-	} 
+	}
 
 	return (int)min;
 }
@@ -971,7 +971,7 @@ int videoInputCamera::getCameraSettingStep(int mode) {
 	case SATURATION: getVideoSettingRange(VideoProcAmp_Saturation, min, max, step, flag, dflt); break;
 	case COLOR_HUE: getVideoSettingRange(VideoProcAmp_Hue, min, max, step, flag, dflt); break;
 	default: return 0;
-	} 
+	}
 
 	return (int)step;
 }
@@ -1014,7 +1014,7 @@ int videoInputCamera::getDefaultCameraSetting(int mode) {
 	case SATURATION: getVideoSettingRange(VideoProcAmp_Saturation, min, max, step, flag, dflt); break;
 	case COLOR_HUE: getVideoSettingRange(VideoProcAmp_Hue, min, max, step, flag, dflt); break;
 	default: return 0;
-	} 
+	}
 
 	return (int)dflt;
 }
@@ -1126,7 +1126,7 @@ bool videoInputCamera::comInit(){
 }
 
 bool videoInputCamera::comUnInit(){
-	if(comCount > 0)comCount--;	
+	if(comCount > 0)comCount--;
 
 	if(comCount == 0){
 		CoUninitialize();
