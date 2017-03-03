@@ -21,6 +21,8 @@ ext/portvideo/linux/SportVideo
 
 # ignore application configuration files
 calibration.grid
+# directory generated in debug mode
+recording
 
 # ignore auto generated header things
 *_kernel.h

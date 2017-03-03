@@ -1,22 +1,29 @@
 TARGET = SportVideo
 CSOURCES = $(shell ls ../interface/*.c)
 COBJECTS = $(CSOURCES:.c=.o)
-CPPSOURCES = $(shell ls ./*.cpp ../sdldemo/*.cpp ../common/*.cpp ../interface/*.cpp ../tinyxml/*.cpp)
+CPPSOURCES = $(shell ls ./*.cpp ../sdldemo/*.cpp ../common/*.cpp ../interface/*.cpp ../tinyxml/*.cpp ../transform/*.cpp  ../../../common/CalibrationGrid.cpp)
 CPPOBJECTS = $(CPPSOURCES:.cpp=.o)
 
 SDL_CFLAGS  := $(shell sdl2-config --cflags)
 SDL_LDFLAGS := $(shell sdl2-config --libs)
 
-INCLUDES = -I../common -I../sdldemo -I../interface -I../tinyxml -I.
-COPTS  = -Ofast -w
-CDEBUG = -Wall -g
-#CFLAGS = $(COPTS) $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DNDEBUG
-CFLAGS = $(CDEBUG) $(SDL_CFLAGS) $(INCLUDES) -DLINUX
-CXXFLAGS = $(CFLAGS)
+INCLUDES = -I../common -I../sdldemo -I../interface -I../tinyxml -I../transform -I../../../common -I../../libfidtrack -I.
+CFLAGS_REL = -Ofast -w $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DNDEBUG
+CFLAGS_DBG = -Wall -g $(SDL_CFLAGS) $(INCLUDES) -DLINUX -DDEBUG
+all: CFLAGS = $(CFLAGS_REL)
+all: CXXFLAGS = $(CFLAGS_REL)
+debug: CFLAGS = $(CFLAGS_DBG)
+debug: CXXFLAGS = $(CFLAGS_DBG)
 
-LIBS = $(SDL_LDFLAGS) -ldc1394 -lpthread -lturbojpeg
+LIBS = $(SDL_LDFLAGS) -ldc1394 -lpthread -lturbojpeg -lOpenCL
 
-all:	$(TARGET)
+pre-build:
+	@echo Generating CameraFrameTransformer_kernel.h
+	@../../../linux/bin2h.py ../transform/CameraFrameTransformer.cl ../transform/CameraFrameTransformer_kernel.h kernel_source
+
+all: pre-build $(TARGET)
+
+debug: pre-build $(TARGET)
 
 %.o: %.cpp
 	@echo [CXX] $@
@@ -25,10 +32,13 @@ all:	$(TARGET)
 	@echo [CC] $@
 	@ $(CC) $(CFLAGS) -o $@ -c $<
 
-
 $(TARGET) : $(CPPOBJECTS) $(COBJECTS)
 	@echo [LD] $@
 	@ $(CXX) -o $@ $+ $(LIBS)
+#	strip $(TARGET)
+
+../transform/CameraFrameTransformer.o: \
+ ../transform/CameraFrameTransformer_kernel.h
 
 clean:
 	@echo [CLEAN] $(TARGET)
@@ -36,6 +46,7 @@ clean:
 
 run:	$(TARGET)
 	./$(TARGET)
+
 
 install: $(TARGET)
 	install -d $(DESTDIR)$(BINDIR)
