@@ -363,8 +363,42 @@ bool V4Linux2Camera::initCamera() {
     setupFrame();
     cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
     buffers_initialized = true;
-    
-    return _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+
+    // check if we have an calib_grid_path specified.
+    if(strlen(cfg->calib_grid_path) > 0) {
+        return _transformer.Init(
+            cfg->cam_width,
+            cfg->cam_height,
+            cfg->cam_format,
+            cfg->frame_width,
+            cfg->frame_height,
+            cfg->buf_format,
+            cfg->frame_xoff,
+            cfg->frame_yoff,
+            cfg->flip_h,
+            cfg->flip_v,
+            // cfg->correct_distortion
+            true,
+            cfg->calib_grid_path
+        );
+    } else {
+        return _transformer.Init(
+            cfg->cam_width,
+            cfg->cam_height,
+            cfg->cam_format,
+            cfg->frame_width,
+            cfg->frame_height,
+            cfg->buf_format,
+            cfg->frame_xoff,
+            cfg->frame_yoff,
+            cfg->flip_h,
+            cfg->flip_v
+            // correct_distortion = true,
+            // calib_grid_file = NULL
+            // this will fallback to default file
+        );
+    }
+
 }
 
 bool V4Linux2Camera::startCamera() {
@@ -405,14 +439,14 @@ unsigned char* V4Linux2Camera::getFrame()  {
 
     unsigned char *raw_buffer = (unsigned char*)buffers[v4l2_buf.index].start;
     if (raw_buffer==NULL) return NULL;
-    
+
     _transformer.Transform(raw_buffer, cam_buffer);
-    
+
     if (-1 == ioctl (dev_handle, VIDIOC_QBUF, &v4l2_buf)) {
         printf("cannot unqueue buffer: %s\n", strerror(errno));
         return NULL;
     }
-    
+
     return cam_buffer;
 }
 
@@ -887,4 +921,3 @@ int V4Linux2Camera::getCameraSettingStep(int mode) {
 
     return 0;
 }
-

@@ -1,17 +1,17 @@
 /*  portVideo, a cross platform camera framework
  Copyright (C) 2005-2016 Martin Kaltenbrunner <martin@tuio.org>
  PS3EyeCamera initially contributed 2014 by Sebestyén Gábor
- 
+
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
  version 2.1 of the License, or (at your option) any later version.
- 
+
  This library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with this library; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -39,19 +39,19 @@ int PS3EyeCamera::getDeviceCount() {
 }
 
 std::vector<CameraConfig> PS3EyeCamera::getCameraConfigs() {
-    
+
     std::vector<CameraConfig> cfg_list;
 
     int dev_count = getDeviceCount();
     if(dev_count==0) return cfg_list;
-    
+
     if (dev_count > 0)
     {
         for (int i=0;i<dev_count;i++) {
-            
+
             CameraConfig cam_cfg;
             CameraTool::initCameraConfig(&cam_cfg);
-            
+
             sprintf(cam_cfg.name, "PS3Eye");
             cam_cfg.driver = DRIVER_PS3EYE;
             cam_cfg.device = i;
@@ -99,7 +99,7 @@ std::vector<CameraConfig> PS3EyeCamera::getCameraConfigs() {
     } else {
         printf ("no PS3Eye cameras found\n");
     }
-	
+
     return cfg_list;
 }
 
@@ -107,22 +107,22 @@ CameraEngine* PS3EyeCamera::getCamera(CameraConfig *cam_cfg) {
 
 	int dev_count = getDeviceCount();
 	if (dev_count == 0) return NULL;
-	
+
 	if ((cam_cfg->device==SETTING_MIN) || (cam_cfg->device==SETTING_DEFAULT)) cam_cfg->device=0;
 	else if (cam_cfg->device==SETTING_MAX) cam_cfg->device=dev_count-1;
-	
+
 	std::vector<CameraConfig> cfg_list = PS3EyeCamera::getCameraConfigs();
 	if (cam_cfg->cam_format==FORMAT_UNKNOWN) cam_cfg->cam_format = cfg_list[0].cam_format;
 	setMinMaxConfig(cam_cfg,cfg_list);
-	
+
 	if (cam_cfg->force) return new PS3EyeCamera(cam_cfg);
 
 	int count = cfg_list.size();
 	if (count > 0) {
 		for (int i=0;i<count;i++) {
-			
+
 			if (cam_cfg->device != cfg_list[i].device) continue;
-			
+
 			if ((cam_cfg->cam_width >=0) && (cam_cfg->cam_width != cfg_list[i].cam_width)) continue;
 			if ((cam_cfg->cam_height >=0) && (cam_cfg->cam_height != cfg_list[i].cam_height)) continue;
 			if ((cam_cfg->cam_fps >=0) && (cam_cfg->cam_fps != cfg_list[i].cam_fps)) continue;
@@ -130,43 +130,43 @@ CameraEngine* PS3EyeCamera::getCamera(CameraConfig *cam_cfg) {
 			return new PS3EyeCamera(cam_cfg);
 		}
 	}
-	
+
 	return NULL;
 }
 
 bool PS3EyeCamera::initCamera() {
-	
+
 	std::vector<PS3EYECam::PS3EYERef> devices( PS3EYECam::getDevices() );
 	int dev_count = (int)devices.size();
 	if (dev_count == 0) return false;
 	if ((cfg->device<0) || (cfg->device>=dev_count)) return false;
-	
+
 	eye = devices.at(cfg->device);
 	sprintf(cfg->name, "PS3Eye");
-	
+
     // check config parameters
     if ((cfg->cam_width == SETTING_MIN || cfg->cam_width == 320) && (cfg->cam_height == SETTING_MIN || cfg->cam_height == 240)) {
 
         cfg->cam_width =  320;
         cfg->cam_height = 240;
-        
+
         if (cfg->cam_fps==SETTING_MAX) cfg->cam_fps = 187;
         else if (cfg->cam_fps==SETTING_MIN) cfg->cam_fps = 30;
         else if (cfg->cam_fps<30) cfg->cam_fps = 30;
         else if (cfg->cam_fps>187) cfg->cam_fps = 187;
-        
+
     } else if ((cfg->cam_width == SETTING_MAX || cfg->cam_width == 640) && (cfg->cam_height == SETTING_MAX || cfg->cam_height == 480 )) {
-        
+
         cfg->cam_width =  640;
         cfg->cam_height = 480;
-        
+
         if (cfg->cam_fps==SETTING_MAX) cfg->cam_fps  = 60;
         else if (cfg->cam_fps==SETTING_MIN) cfg->cam_fps  = 15;
         else if (cfg->cam_fps<15) cfg->cam_fps = 15;
         else if (cfg->cam_fps>60) cfg->cam_fps = 60;
-        
+
 	} else return false;
-	
+
     // init camera
     eye->init( cfg->cam_width, cfg->cam_height, cfg->cam_fps, PS3EYECam::EOutputFormat::Bayer);
 	raw_buffer = new uint8_t[eye->getWidth() * eye->getHeight() * eye->getOutputBytesPerPixel()];
@@ -181,7 +181,40 @@ bool PS3EyeCamera::initCamera() {
     if (cfg->frame) cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
     else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->buf_format];
 
-    return _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+	// check if we have an calib_grid_path specified.
+	if(strlen(cfg->calib_grid_path) > 0) {
+        return _transformer.Init(
+            cfg->cam_width,
+            cfg->cam_height,
+            cfg->cam_format,
+            cfg->frame_width,
+            cfg->frame_height,
+            cfg->buf_format,
+            cfg->frame_xoff,
+            cfg->frame_yoff,
+            cfg->flip_h,
+            cfg->flip_v,
+            // cfg->correct_distortion
+            true,
+            cfg->calib_grid_path
+        );
+    } else {
+        return _transformer.Init(
+            cfg->cam_width,
+            cfg->cam_height,
+            cfg->cam_format,
+            cfg->frame_width,
+            cfg->frame_height,
+            cfg->buf_format,
+            cfg->frame_xoff,
+            cfg->frame_yoff,
+            cfg->flip_h,
+            cfg->flip_v
+            // correct_distortion = true,
+            // calib_grid_file = NULL
+            // this will fallback to default file
+        );
+    }
 }
 
 bool PS3EyeCamera::startCamera() {
@@ -227,7 +260,7 @@ unsigned char*  PS3EyeCamera::getFrame() {
 	//	else
 	//		rgb2gray(cfg->cam_width, cfg->cam_height, (unsigned char *)raw_buffer, cam_buffer);
 	//}
- 
+
     return cam_buffer;
 }
 
@@ -236,7 +269,7 @@ int PS3EyeCamera::getCameraSettingStep(int mode) {
 }
 
 bool PS3EyeCamera::hasCameraSettingAuto(int mode) {
-    
+
     switch (mode) {
         case GAIN:
         case WHITE:
@@ -271,12 +304,12 @@ bool PS3EyeCamera::getCameraSettingAuto(int mode) {
         /*case WHITE:
             return eye->getAutoWhiteBalance();*/
     }
-    
+
     return false;
 }
 
 bool PS3EyeCamera::hasCameraSetting(int mode) {
-    
+
     switch (mode) {
         case GAIN:
         case AUTO_GAIN:
@@ -367,7 +400,7 @@ int PS3EyeCamera::getCameraSetting(int mode) {
 }
 
 int PS3EyeCamera::getMaxCameraSetting(int mode) {
-    
+
     switch (mode) {
         case AUTO_GAIN:
         case AUTO_EXPOSURE:

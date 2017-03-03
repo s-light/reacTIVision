@@ -1,16 +1,16 @@
 /*  portVideo, a cross platform camera framework
  Copyright (C) 2005-2016 Martin Kaltenbrunner <martin@tuio.org>
- 
+
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
  version 2.1 of the License, or (at your option) any later version.
- 
+
  This library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with this library; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -58,7 +58,7 @@ void readSettings(application_settings *config) {
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	CFURLRef mainBundleURL = CFBundleCopyBundleURL( mainBundle);
 	CFStringRef cfStringRef = CFURLCopyFileSystemPath( mainBundleURL, kCFURLPOSIXPathStyle);
-	CFStringGetCString( cfStringRef, app_path, 1024, kCFStringEncodingASCII);	
+	CFStringGetCString( cfStringRef, app_path, 1024, kCFStringEncodingASCII);
 	CFRelease( mainBundleURL);
 	CFRelease( cfStringRef);
 	sprintf(config->file,"%s/Contents/Resources/portvideo.xml",app_path);
@@ -75,7 +75,7 @@ void readSettings(application_settings *config) {
 	tinyxml2::XMLDocument xml_settings;
 	xml_settings.LoadFile(config->file);
 	if(xml_settings.Error()) {
-		std::cout << "Error loading configuration file: " << config->file << std::endl;
+		std::cout << "Error loading configuration file: '" << config->file << "'"<< std::endl;
 		return;
 	}
 
@@ -95,7 +95,7 @@ void readSettings(application_settings *config) {
 			else if ( strcmp( image_element->Attribute("display"), "src" ) == 0 )  config->display_mode = 1;
 			else if ( strcmp( image_element->Attribute("display"), "dest" ) == 0 )  config->display_mode = 2;
 		}
-        
+
 		if(image_element->Attribute("equalize")!=NULL) {
 			if ((strcmp( image_element->Attribute("equalize"), "true" ) == 0) ||  atoi(image_element->Attribute("equalize"))==1) config->background = true;
 		}
@@ -111,7 +111,7 @@ void writeSettings(application_settings *config) {
 	tinyxml2::XMLDocument xml_settings;
 	xml_settings.LoadFile(config->file);
 	if(xml_settings.Error()) {
-		std::cout << "Error saving configuration file: " << config->file << std::endl;
+		std::cout << "Error saving configuration file: '" << config->file << "'" << std::endl;
 		return;
 	}
 
@@ -129,7 +129,7 @@ void writeSettings(application_settings *config) {
 		if(image_element->Attribute("display")!=NULL)  {
 			if (config->display_mode == 0) image_element->SetAttribute("display","none");
 			else if (config->display_mode == 1) image_element->SetAttribute("display","src");
-			else if (config->display_mode == 2) image_element->SetAttribute("display","dest");  
+			else if (config->display_mode == 2) image_element->SetAttribute("display","dest");
 		}
 		if(image_element->Attribute("equalize")!=NULL) {
 			if (config->background) image_element->SetAttribute("equalize","true");
@@ -142,7 +142,7 @@ void writeSettings(application_settings *config) {
 	}
 
 	xml_settings.SaveFile(config->file);
-	if( xml_settings.Error() ) std::cout << "Error saving configuration file: "  << config->file << std::endl;
+	if( xml_settings.Error() ) std::cout << "Error saving configuration file: '"  << config->file << "'" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
     config.headless = headless;
 
 	engine = new VisionEngine(app_name, &config);
- 
+
 	UserInterface *uiface;
     if (!headless) {
         uiface = new SDLinterface(app_name,config.fullscreen);
@@ -206,9 +206,9 @@ int main(int argc, char* argv[]) {
 
 	FrameProcessor *frameinverter = new FrameInverter();
     engine->addFrameProcessor(frameinverter);
-    
+
 	engine->start();
-    
+
 	engine->removeFrameProcessor(frameinverter);
 	delete frameinverter;
 

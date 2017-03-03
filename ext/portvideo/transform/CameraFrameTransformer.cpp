@@ -1,16 +1,16 @@
 /*  portVideo, a cross platform camera framework
  Copyright (C) 2005-2016 Martin Kaltenbrunner <martin@tuio.org>
- 
+
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation; either
  version 2.1 of the License, or (at your option) any later version.
- 
+
  This library is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with this library; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -31,7 +31,7 @@ CameraFrameTransformer::CameraFrameTransformer()
     _jpegBuf = NULL;
 
 #ifdef WIN32
-    mtx = CreateMutex(NULL, FALSE, TEXT("CameraFrameTransformer")); 
+    mtx = CreateMutex(NULL, FALSE, TEXT("CameraFrameTransformer"));
 #else
     pthread_mutex_init(&mtx, NULL);
 #endif
@@ -41,7 +41,7 @@ CameraFrameTransformer::CameraFrameTransformer()
 CameraFrameTransformer::~CameraFrameTransformer()
 {
     if(_dmap != NULL) delete[] _dmap;
-    
+
     if(_useJPEGDecompressor)
     {
         tjDestroy(_jpegDecompressor);
@@ -56,35 +56,47 @@ CameraFrameTransformer::~CameraFrameTransformer()
 
 }
 
-bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool correct_distortion, const char* calib_grid_file)
-{
+bool CameraFrameTransformer::Init(
+    int src_width,
+    int src_height,
+    int src_format,
+    int dst_width,
+    int dst_height,
+    int dst_format,
+    int dst_xoff,
+    int dst_yoff,
+    bool dst_flip_h,
+    bool dst_flip_v,
+    bool correct_distortion,
+    const char* calib_grid_file
+) {
     lock();
 
     assert(src_width > 0 && src_height > 0);
     assert(dst_width > 0 && dst_height > 0);
     assert(format_pixel_size[dst_format] > 0);
-    
+
     if(_useJPEGDecompressor)
     {
         tjDestroy(_jpegDecompressor);
         delete[] _jpegBuf;
     }
-    
+
     _useJPEGDecompressor = src_format == FORMAT_JPEG || src_format == FORMAT_MJPEG;
     if(_useJPEGDecompressor)
     {
         assert(dst_format == FORMAT_GRAY || dst_format == FORMAT_RGB);
-        
+
         _jpegDecompressor = tjInitDecompress();
         _jpegBuf = new unsigned char[src_width * dst_width * format_pixel_size[dst_format]];
-        
+
         if(dst_format == FORMAT_GRAY) _jpegPixelFormat = TJPF_GRAY;
         else if(dst_format == FORMAT_RGB) _jpegPixelFormat = TJPF_RGB;
 
         //Deactivating pixel format conversation in OpenCL
-        src_format = dst_format;    
+        src_format = dst_format;
     }
-    
+
     assert(format_pixel_size[src_format] > 0);
 
     std::vector<cl::Platform> platforms;
@@ -97,7 +109,7 @@ bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format,
         unlock();
         return false;
     }
-    
+
     platforms[0].getDevices(CL_DEVICE_TYPE_DEFAULT, &devices);
     if(devices.size() <= 0)
     {
@@ -115,23 +127,28 @@ bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format,
 
     if(correct_distortion)
     {
-        if(calib_grid_file == NULL)
+        char config_path[1024];
+        if(calib_grid_file == NULL) {
+            // try with default grid file
             calib_grid_file = "calibration.grid";
 
-        //TODO: Test on mac
-        char config_path[512];
-#ifdef __APPLE__
-        char path[1024];
-        CFBundleRef mainBundle = CFBundleGetMainBundle();
-        CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
-        CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
-        CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
-        CFRelease(mainBundleURL);
-        CFRelease(cfStringRef);
-        sprintf(config_path, "%s/Contents/Resources/%s", path, calib_grid_file);
-#else
-        sprintf(config_path, "./%s", calib_grid_file);
-#endif
+            //TODO: Test on mac
+            #ifdef __APPLE__
+                char path[1024];
+                CFBundleRef mainBundle = CFBundleGetMainBundle();
+                CFURLRef mainBundleURL = CFBundleCopyBundleURL(mainBundle);
+                CFStringRef cfStringRef = CFURLCopyFileSystemPath(mainBundleURL, kCFURLPOSIXPathStyle);
+                CFStringGetCString(cfStringRef, path, 1024, kCFStringEncodingASCII);
+                CFRelease(mainBundleURL);
+                CFRelease(cfStringRef);
+                sprintf(config_path, "%s/Contents/Resources/%s", path, calib_grid_file);
+            #else
+                sprintf(config_path, "./%s", calib_grid_file);
+            #endif
+        } else {
+            // no modifications needed.
+            sprintf(config_path, "%s", calib_grid_file);
+        }
 
         this->ComputeDmap(dst_width, dst_height, src_width, src_height, config_path);
     }
@@ -171,7 +188,7 @@ bool CameraFrameTransformer::Init(int src_width, int src_height, int src_format,
     }
     else
         _kernel.setArg(2, NULL);
-    
+
     unlock();
     return true;
 }
@@ -188,7 +205,7 @@ void CameraFrameTransformer::Transform(unsigned char* src, unsigned char* dst)
         tjDecompress2(_jpegDecompressor, src, _bufferSrcSize, _jpegBuf, width, 0, height, _jpegPixelFormat, TJFLAG_FASTDCT);
         src = _jpegBuf;
     }
-    
+
     _queue.enqueueWriteBuffer(_bufferSrc, CL_TRUE, 0, _bufferSrcSize, src);
     _queue.enqueueNDRangeKernel(_kernel, cl::NullRange, _workItemRange);
     _queue.enqueueReadBuffer(_bufferDst, CL_TRUE, 0, _bufferDstSize, dst);
@@ -260,18 +277,18 @@ void CameraFrameTransformer::BuildKernelOptions(char* options, int src_width, in
 
 void CameraFrameTransformer::lock()
 {
-#ifdef WIN32	
+#ifdef WIN32
     WaitForSingleObject(mtx, INFINITE);
 #else
     pthread_mutex_lock(&mtx);
-#endif		
+#endif
 }
 
 void CameraFrameTransformer::unlock()
 {
-#ifdef WIN32	
+#ifdef WIN32
     ReleaseMutex(mtx);
 #else
     pthread_mutex_unlock(&mtx);
-#endif	
-}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+#endif
+}

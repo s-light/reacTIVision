@@ -316,7 +316,40 @@ bool videoInputCamera::initCamera() {
     if(cfg->frame) cam_buffer = new unsigned char[cfg->frame_width*cfg->frame_height*cfg->buf_format];
     else cam_buffer = new unsigned char[cfg->cam_width*cfg->cam_height*cfg->buf_format];
 
-    return _transformer.Init(cfg->cam_width, cfg->cam_height, cfg->cam_format, cfg->frame_width, cfg->frame_height, cfg->buf_format, cfg->frame_xoff, cfg->frame_yoff, cfg->flip_h, cfg->flip_v);
+	// check if we have an calib_grid_path specified.
+	if(strlen(cfg->calib_grid_path) > 0) {
+		return _transformer.Init(
+			cfg->cam_width,
+			cfg->cam_height,
+			cfg->cam_format,
+			cfg->frame_width,
+			cfg->frame_height,
+			cfg->buf_format,
+			cfg->frame_xoff,
+			cfg->frame_yoff,
+			cfg->flip_h,
+			cfg->flip_v,
+			// cfg->correct_distortion
+			true,
+			cfg->calib_grid_path
+		);
+	} else {
+		return _transformer.Init(
+			cfg->cam_width,
+			cfg->cam_height,
+			cfg->cam_format,
+			cfg->frame_width,
+			cfg->frame_height,
+			cfg->buf_format,
+			cfg->frame_xoff,
+			cfg->frame_yoff,
+			cfg->flip_h,
+			cfg->flip_v
+			// correct_distortion = true,
+			// calib_grid_file = NULL
+			// this will fallback to default file
+		);
+	}
 }
 
 HRESULT videoInputCamera::setupDevice() {

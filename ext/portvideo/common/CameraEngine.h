@@ -141,11 +141,12 @@ struct CameraConfig {
     int red;
     int blue;
     int green;
-	
+
 	bool force;
     bool flip_h;
     bool flip_v;
 
+    // bool correct_distortion;
     char calib_grid_path[1024];
 
     std::vector<CameraConfig> childs;

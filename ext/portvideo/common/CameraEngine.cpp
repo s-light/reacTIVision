@@ -32,6 +32,7 @@ void CameraEngine::printInfo() {
 		else printf("format: %dx%d, %.1ffps\n",cfg->frame_width,cfg->frame_height,cfg->cam_fps);
 	}
 	else printf("format7_%d: %dx%d\n",cfg->frame_mode,cfg->frame_width,cfg->frame_height);
+	printf("calibration grid file:  '%s'\n",cfg->calib_grid_path);
 }
 
 void CameraEngine::setMinMaxConfig(CameraConfig *cam_cfg, std::vector<CameraConfig> cfg_list) {
@@ -149,7 +150,7 @@ void CameraEngine::showInterface(UserInterface *uiface) {
     //int settingValue = getCameraSetting(currentCameraSetting);
     //int maxValue =  getMaxCameraSetting(currentCameraSetting);
     //int minValue =  getMinCameraSetting(currentCameraSetting);
-	
+
     const char *settingText = NULL;
     switch (currentCameraSetting) {
         case BRIGHTNESS:	settingText = "Brightness"; break;
