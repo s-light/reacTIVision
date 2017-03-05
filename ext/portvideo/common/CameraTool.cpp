@@ -653,6 +653,11 @@ void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camer
 	image_element->SetAttribute("width",cam_cfg.cam_width);
 	image_element->SetAttribute("height",cam_cfg.cam_height);
 	image_element->SetAttribute("fps",cam_cfg.cam_fps);
+	if (cam_cfg.color) {
+		image_element->SetAttribute("fps","true");
+	} else {
+		image_element->SetAttribute("fps","false");
+	}
     camera_element->LinkEndChild(image_element);
 
 	tinyxml2::XMLElement* settings_element = doc->NewElement("settings");
