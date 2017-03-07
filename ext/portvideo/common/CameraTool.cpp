@@ -682,7 +682,11 @@ void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camer
     camera_element->LinkEndChild(settings_element);
 
 	tinyxml2::XMLElement* frame_element = doc->NewElement("frame");
-	if (cam_cfg.frame_mode>=0) saveAttribute(frame_element, "mode", cam_cfg.frame_mode);
+		saveAttribute(frame_element, "width", cam_cfg.frame_width);
+		saveAttribute(frame_element, "height", cam_cfg.frame_height);
+		saveAttribute(frame_element, "xoff", cam_cfg.frame_xoff);
+		saveAttribute(frame_element, "yoff", cam_cfg.frame_yoff);
+		saveAttribute(frame_element, "mode", cam_cfg.frame_mode);
     camera_element->LinkEndChild(frame_element);
 
 	tinyxml2::XMLElement* calibration_element = doc->NewElement("calibration");
