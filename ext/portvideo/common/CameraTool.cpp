@@ -658,6 +658,16 @@ void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camer
 	} else {
 		image_element->SetAttribute("color","false");
 	}
+	if (cam_cfg.flip_h) {
+		image_element->SetAttribute("flip_h","true");
+	} else {
+		image_element->SetAttribute("flip_h","false");
+	}
+	if (cam_cfg.flip_v) {
+		image_element->SetAttribute("flip_v","true");
+	} else {
+		image_element->SetAttribute("flip_v","false");
+	}
     camera_element->LinkEndChild(image_element);
 
 	tinyxml2::XMLElement* settings_element = doc->NewElement("settings");
