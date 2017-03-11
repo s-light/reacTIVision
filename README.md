@@ -6,7 +6,7 @@
 **reacTIVision** is an open source, cross-platform computer vision framework for the fast and robust tracking of fiducial markers attached onto physical objects, as well as for multi-touch finger tracking. It was mainly designed as a toolkit for the rapid development of table-based tangible user interfaces (TUI) and multi-touch interactive surfaces. This framework has been developed by Martin Kaltenbrunner and Ross Bencina as part of the [Reactable project](http://www.reactable.com/), a tangible modular synthesizer.
 
 
-**reacTIVision** is a standalone application, which sends `Open Sound Control` (OSC) messages via a `UDP network socket` to any connected client application. It implements the [TUIO](http://www.tuio.org/) protocol, which has been specially designed for transmitting the state of tangible objects and multi-touch events from a tabletop surface. 
+**reacTIVision** is a standalone application, which sends `Open Sound Control` (OSC) messages via a `UDP network socket` to any connected client application. It implements the [TUIO](http://www.tuio.org/) protocol, which has been specially designed for transmitting the state of tangible objects and multi-touch events from a tabletop surface.
 
 The [TUIO](http://www.tuio.org/) framework includes a set of example client projects for various programming languages, which serve as a base for the easy development of tangible user interface or multi-touch applications. Example projects are available for languages such as:
 - C/C++
@@ -44,7 +44,7 @@ This application was designed to track specially designed fiducial markers. You 
 
 ## Blob Tracking
 
-Since version 1.6 **reacTIVision** also can track untagged objects, sending the overall footprint size and orientation via the [TUIO](http://www.tuio.org/) blob profile. 
+Since version 1.6 **reacTIVision** also can track untagged objects, sending the overall footprint size and orientation via the [TUIO](http://www.tuio.org/) blob profile.
 You can activate this feature and configure the maximum blob size in `./reacTIVision.xml`, where you can also choose to send optional blob messages for fingers and fiducials, in order to receive information about their overall size. These blobs will share the same session ID with the respective finger or fiducial to allow the proper assignment.
 
 ## Application Handling
@@ -59,14 +59,14 @@ The camera options can be adjusted by pressing the `O` key. On Windows and Mac O
 to browse and select all available cameras and image formats.
 
 In order to produce some more verbose debugging output, hitting the `V` will print the symbol and finger data to the console. Pressing the `H` key will display all these options on the screen. `F1` will toggle the full screen mode, the `P` key pauses the image analysis completely, hitting `ESC` will quit the application.
-	
+
 ## XML configuration file
 
 **Common settings** can be edited within the file `./reacTIVision.xml` where all changes are stored automatically when closing the application.
 
 Under Mac OS X this XML configuration file can be found within the application bundle's Resources folder. Select *Show Package Contents"* from the application's context menu in order to access and edit the file.
 
-The **reacTIVision** application usually sends `TUIO/UDP` messages to port `3333` on `localhost (127.0.0.1)`. Alternative transport types are 
+The **reacTIVision** application usually sends `TUIO/UDP` messages to port `3333` on `localhost (127.0.0.1)`. Alternative transport types are
 - `TUIO/TCP` (TCP)
 - `TUIO/WEB` (Websocket)
 - `TUIO/FLC` (Flash Local Connection).
@@ -132,13 +132,17 @@ To check if the distortion is working properly press `R`. This will show the ful
 The source distribution includes projects for all three supported platforms and their respective build systems: Linux, Windows, MacOS X.
 
 ##### Windows:
-A *Visual Studio 2012* project as well as the necessary `SDL2` libraries and headers are included. The project should build right away for 32bit and 64bit targets without any additional configuration.
+A *Visual Studio 2012* project as well as the necessary `SDL2` libraries and headers are included. The project should build right away for 32bit and 64bit targets without any additional configuration.   
+TODO: check what is needed for OpenCL.
 
 ##### Mac OS X:
-An *Xcode* project for *Xcode* version 3.2 or later is included. The build will require the `SDL2` and `VVUVCKit` frameworks, in order to compile properly, just unzip the provided `./ext/portvideo/macosx/Frameworks.zip` into the directory `./ext/portvideo/macosx/`
+An *Xcode* project for *Xcode* version 3.2 or later is included. The build will require the `SDL2` and `VVUVCKit` frameworks, in order to compile properly, just unzip the provided `./ext/portvideo/macosx/Frameworks.zip` into the directory `./ext/portvideo/macosx/`   
+TODO: check what is needed for OpenCL.
 
 ##### Linux:
-Call make to build the application, the distribution also includes configurations for the creation of RPM packages, as well as a project file for the *Codeblocks IDE*. Make sure you have the `libSDL-2.0` and `libdc1394-2.0` (or later) as well as `libjpeg-turbo` libraries and headers installed. 
+Call make to build the application, the distribution also includes configurations for the creation of RPM packages, as well as a project file for the *Codeblocks IDE*. Make sure you have the `libSDL-2.0` and `libdc1394-2.0` (or later) as well as `libjpeg-turbo` libraries and headers installed.
+additional you need a working openCL device (GPU or CPU). for `*ubuntu` based systems you can install `opencl-header` and `ocl-icd-opencl-dev` packages. if make all gives you an error message saying saying 'cl.hpp' is missing than [donwload the official cl.hpp file from the khronos registry](https://www.khronos.org/registry/OpenCL/api/2.1/cl.hpp) and copy it to the other opencl headers in `/usr/include/CL`.
+
 
 ## License
 
