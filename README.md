@@ -141,7 +141,8 @@ TODO: check what is needed for OpenCL.
 
 ##### Linux:
 Call make to build the application, the distribution also includes configurations for the creation of RPM packages, as well as a project file for the *Codeblocks IDE*. Make sure you have the `libSDL-2.0` and `libdc1394-2.0` (or later) as well as `libjpeg-turbo` libraries and headers installed.
-additional you need a working openCL device (GPU or CPU). for `*ubuntu` based systems you can install `opencl-header` and `ocl-icd-opencl-dev` packages. if make all gives you an error message saying saying 'cl.hpp' is missing than [donwload the official cl.hpp file from the khronos registry](https://www.khronos.org/registry/OpenCL/api/2.1/cl.hpp) and copy it to the other opencl headers in `/usr/include/CL`.
+additional you need a working openCL device (GPU or CPU). for `*ubuntu` based systems you can install `opencl-headers` and `ocl-icd-opencl-dev` packages. if make all gives you an error message saying saying 'cl.hpp' is missing than [donwload the official cl.hpp file from the khronos registry](https://www.khronos.org/registry/OpenCL/api/2.1/cl.hpp) and copy it to the other opencl headers in `/usr/include/CL`.  `sudo wget  -O /usr/include/CL/cl.hpp "https://www.khronos.org/registry/OpenCL/api/2.1/cl.hpp" `
+`sudo apt-get install libsdl2-dev libdc1394-dev libjpeg-dev opencl-headers ocl-icd-opencl-dev`
 
 
 ## License
