@@ -20,9 +20,39 @@
 #include "CameraFrameTransformer_kernel.h"
 #include "CameraEngine.h"
 
-const int format_pixel_size[] = { /*UKNOWN*/ -1,/*GRAY*/ 1,/*GRAY16*/ 2, /*RGB*/ 3, /*RGB16*/ 2, /*GRAY16S*/ 2, /*RGB16S*/ 2, /*RAW8*/ 1, /*RAW16*/ 2, /*RGBA*/ 4,
-/*YUYV*/ 4, /*UYVY*/2, /*YUV411*/-1, /*YUV444*/-1, /*420P*/-1, /*410P*/-1,/*YVYU*/-1, /*YUV211*/ -1, /*BAYERGRBG*/1,  -1 ,/*JPEG*/-1,/*MJPEG*/-1,/*MJPEG2*/-1,/*MJPEG4*/-1,
-/*H263*/-1,/*H264*/-1,/*DVPAL*/-1,-1,-1,-1,/*DVNTSC*/-1 };
+const int format_pixel_size[] = {
+    /*UKNOWN*/ -1,
+    /*GRAY*/ 1,
+    /*GRAY16*/ 2,
+    /*RGB*/ 3,
+    /*RGB16*/ 2,
+    /*GRAY16S*/ 2,
+    /*RGB16S*/ 2,
+    /*RAW8*/ 1,
+    /*RAW16*/ 2,
+    /*RGBA*/ 4,
+    /*YUYV*/ 4,
+    /*UYVY*/2,
+    /*YUV411*/-1,
+    /*YUV444*/-1,
+    /*420P*/-1,
+    /*410P*/-1,
+    /*YVYU*/-1,
+    /*YUV211*/ -1,
+    /*BAYERGRBG*/1,
+    -1 ,
+    /*JPEG*/-1,
+    /*MJPEG*/-1,
+    /*MJPEG2*/-1,
+    /*MJPEG4*/-1,
+    /*H263*/-1,
+    /*H264*/-1,
+    /*DVPAL*/-1,
+    -1,
+    -1,
+    -1,
+    /*DVNTSC*/-1
+};
 
 CameraFrameTransformer::CameraFrameTransformer()
 {
@@ -71,6 +101,10 @@ bool CameraFrameTransformer::Init(
     const char* calib_grid_file
 ) {
     lock();
+
+    #ifndef NDEBUG
+        std::cout << "CameraFrameTransformer::Init"<< std::endl;
+    #endif
 
     assert(src_width > 0 && src_height > 0);
     assert(dst_width > 0 && dst_height > 0);
@@ -160,6 +194,10 @@ bool CameraFrameTransformer::Init(
 
     char options[512];
     BuildKernelOptions(options, src_width, src_height, src_format, dst_width, dst_height, dst_format, dst_xoff, dst_yoff, dst_flip_h, dst_flip_v, _dmap != NULL);
+
+    #ifndef NDEBUG
+        std::cout << "OpenCL kernel build options: " << options << std::endl;
+    #endif
 
     if(_program.build(devices, options) != CL_SUCCESS)
         std::cout << "OpenCL error build kernel: " << _program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(_device) << std::endl;

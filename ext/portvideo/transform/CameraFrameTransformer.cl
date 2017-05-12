@@ -1,5 +1,6 @@
 #define FORMAT_GRAY     1
 #define FORMAT_RGB      3
+#define FORMAT_YUYV    10
 #define FORMAT_BAYERGRBG 18
 
 #if DST_FLIP_H
@@ -14,6 +15,9 @@
 #define COL_OFFSET DST_XOFF
 #define READ_STEP 1
 #endif
+
+#define SAT(c) \
+if (c & (~255)) { if (c < 0) c = 0; else c = 255; }
 
 typedef struct pixel_reader
 {
@@ -89,10 +93,15 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
     __global short* read_offset = dmap + row * DST_WIDTH;
 #endif
 
-    int X, R, G, B, G2;
+    int X, R, G, B, G2, Y1, U, Y2, V, C;
 
+#if SRC_FORMAT == FORMAT_YUYV
+    for(int i = 0; i < DST_WIDTH/2; i++)
+    {
+#else
     for(int i = 0; i < DST_WIDTH; i++)
     {
+#endif
         pixel_reader offset_reader;
 #if DMAP
         pt_init_offset(&offset_reader, &reader, *read_offset);
@@ -104,7 +113,7 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
 
             for(int j = 0; j < SRC_FORMAT_PIXEL_SIZE; j++)
                 write[j] = offset_reader.rbuf[j];
-            
+
         #elif SRC_FORMAT == FORMAT_RGB && DST_FORMAT == FORMAT_GRAY
 
             R = offset_reader.rbuf[0];
@@ -118,6 +127,64 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
             write[0] = offset_reader.rbuf[0];
             write[1] = offset_reader.rbuf[0];
             write[2] = offset_reader.rbuf[0];
+
+        #elif SRC_FORMAT == FORMAT_YUYV && DST_FORMAT == FORMAT_GRAY
+            // just a simpel test
+            // this should not crash but give 'random' results..
+            Y1 = offset_reader.rbuf[0];
+            write[0] = Y1;
+
+        #elif SRC_FORMAT == FORMAT_YUYV && DST_FORMAT == FORMAT_RGB
+            // just a simpel test
+            // this should not crash but give 'random' results..
+            write[0] = offset_reader.rbuf[0];
+            write[1] = offset_reader.rbuf[1];
+            write[2] = offset_reader.rbuf[2];
+
+        // #elif SRC_FORMAT == FORMAT_YUYV && DST_FORMAT == FORMAT_GRAY
+        //     // based on CameraEngine.cpp line 221
+        //     Y1 = offset_reader.rbuf[0];
+        //     // U  = offset_reader.rbuf[1] - 128;
+        //     Y2 = offset_reader.rbuf[2];
+        //     // V  = offset_reader.rbuf[3] - 128;
+        //
+        //     write[0] = Y1;
+        //     // write[1] = Y2;
+        //
+        // #elif SRC_FORMAT == FORMAT_YUYV && DST_FORMAT == FORMAT_RGB
+        //     // based on CameraEngine.cpp line 255 and line 324
+        //     Y1 = offset_reader.rbuf[0];
+        //     U  = offset_reader.rbuf[1] - 128;
+        //     Y2 = offset_reader.rbuf[2];
+        //     V  = offset_reader.rbuf[3] - 128;
+        //
+        //     // subsample 1
+        //     C = 298*(Y1 - 16);
+        //     R = (C + 409*V + 128) >> 8;
+        //     G = (C - 100*U - 208*V + 128) >> 8;
+        //     B = (C + 516*U + 128) >> 8;
+        //
+        //     SAT(R);
+        //     SAT(G);
+        //     SAT(B);
+        //
+        //     write[0] = R;
+        //     write[1] = G;
+        //     write[2] = B;
+        //
+        //     // // subsample 2
+        //     // C = 298*(Y2 - 16);
+        //     // R = (C + 409*V + 128) >> 8;
+        //     // G = (C - 100*U - 208*V + 128) >> 8;
+        //     // B = (C + 516*U + 128) >> 8;
+        //     //
+        //     // SAT(R);
+        //     // SAT(G);
+        //     // SAT(B);
+        //     //
+        //     // write[3] = R;
+        //     // write[4] = G;
+        //     // write[5] = B;
 
         #elif SRC_FORMAT == FORMAT_BAYERGRBG
 
@@ -171,7 +238,7 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
                 write[2] = B;
             #endif
 
-        #endif  
+        #endif
 
         pt_next(&reader);
         write += DST_FORMAT_PIXEL_SIZE;
