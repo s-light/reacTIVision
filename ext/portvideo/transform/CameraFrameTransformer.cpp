@@ -31,7 +31,7 @@ const int format_pixel_size[] = {
     /*RAW8*/ 1,
     /*RAW16*/ 2,
     /*RGBA*/ 4,
-    /*YUYV*/ 4,
+    /*YUYV*/ 2,
     /*UYVY*/2,
     /*YUV411*/-1,
     /*YUV444*/-1,
@@ -307,7 +307,29 @@ void CameraFrameTransformer::ComputeDmap(int dst_width, int dst_height, int src_
 
 void CameraFrameTransformer::BuildKernelOptions(char* options, int src_width, int src_height, int src_format, int dst_width, int dst_height, int dst_format, int dst_xoff, int dst_yoff, bool dst_flip_h, bool dst_flip_v, bool use_dmap)
 {
-    sprintf(options, "-DSRC_FORMAT=%i -DSRC_FORMAT_PIXEL_SIZE=%i -DSRC_WIDTH=%i -DSRC_HEIGHT=%i -DDST_WIDTH=%i -DDST_HEIGHT=%i -DDST_FORMAT=%i -DDST_FORMAT_PIXEL_SIZE=%i -DDST_XOFF=%i -DDST_YOFF=%i", src_format, format_pixel_size[src_format], src_width, src_height, dst_width, dst_height, dst_format, format_pixel_size[dst_format], dst_xoff, dst_yoff);
+    sprintf(
+        options,
+        "-DSRC_FORMAT=%i "
+        "-DSRC_FORMAT_PIXEL_SIZE=%i "
+        "-DSRC_WIDTH=%i "
+        "-DSRC_HEIGHT=%i "
+        "-DDST_WIDTH=%i "
+        "-DDST_HEIGHT=%i "
+        "-DDST_FORMAT=%i "
+        "-DDST_FORMAT_PIXEL_SIZE=%i "
+        "-DDST_XOFF=%i "
+        "-DDST_YOFF=%i",
+        src_format,
+        format_pixel_size[src_format],
+        src_width,
+        src_height,
+        dst_width,
+        dst_height,
+        dst_format,
+        format_pixel_size[dst_format],
+        dst_xoff,
+        dst_yoff
+    );
     if(dst_flip_h) strcat(options, " -DDST_FLIP_H");
     if(dst_flip_v) strcat(options, " -DDST_FLIP_V");
     if(use_dmap) strcat(options, " -DDMAP");
