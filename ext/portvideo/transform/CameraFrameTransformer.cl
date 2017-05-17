@@ -131,11 +131,11 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
             // based on CameraEngine.cpp line 255 and line 324
             if(offset_reader.is_evencol)
             {
-                // strange but V and seemed to be switched..
+                // even collumns (0, 2, 4, 6, ...)
+                // Y1 = offset_reader.rbuf[-2];
+                U  = offset_reader.rbuf[-1] - 128;
                 Y = offset_reader.rbuf[0];
                 V  = offset_reader.rbuf[1] - 128;
-                // Y2 = offset_reader.rbuf[2];
-                U  = offset_reader.rbuf[3] - 128;
 
                 C = 298*(Y - 16);
                 R = (C + 409*V + 128) >> 8;
@@ -152,10 +152,11 @@ __kernel void transform (__global uchar* src, __global uchar* dst, __global shor
             }
             else
             {
-                // Y1 = offset_reader.rbuf[-2];
-                V  = offset_reader.rbuf[-1] - 128;
+                // odd collumns (1, 3, 5, 7, ...)
                 Y = offset_reader.rbuf[0];
                 U  = offset_reader.rbuf[1] - 128;
+                // Y2 = offset_reader.rbuf[2];
+                V  = offset_reader.rbuf[3] - 128;
 
                 C = 298*(Y - 16);
                 R = (C + 409*V + 128) >> 8;

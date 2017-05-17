@@ -31,7 +31,7 @@ const int format_pixel_size[] = {
     /*RAW8*/ 1,
     /*RAW16*/ 2,
     /*RGBA*/ 4,
-    /*YUYV*/ 2,
+    /*YUYV*/ 2, // 4/2=2 (to account for the subpixels)
     /*UYVY*/2,
     /*YUV411*/-1,
     /*YUV444*/-1,
