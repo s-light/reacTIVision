@@ -24,15 +24,22 @@ const char* fstr[] =  { "unknown", "mono8",  "mono16", "rgb8", "rgb16", "mono16s
 
 void CameraEngine::printInfo() {
 	printf("device: %i\n", cfg->device);
-	printf("camera: %s\n",cfg->name);
-	printf("driver: %s\n",dstr[cfg->driver]);
-	printf("codec:  %s\n",fstr[cfg->cam_format]);
-	if (cfg->frame_mode<0) {
-		if (cfg->cam_fps==(int)cfg->cam_fps) printf("format: %dx%d, %dfps\n",cfg->frame_width,cfg->frame_height,(int)cfg->cam_fps);
-		else printf("format: %dx%d, %.1ffps\n",cfg->frame_width,cfg->frame_height,cfg->cam_fps);
+	printf("camera: %s\n", cfg->name);
+	printf("driver: %s\n", dstr[cfg->driver]);
+	printf("codec:  %s\n", fstr[cfg->cam_format]);
+	if (cfg->frame_mode < 0) {
+		if (cfg->cam_fps == (int)cfg->cam_fps) {
+			printf("format: %dx%d, %dfps\n", cfg->frame_width, cfg->frame_height, (int)cfg->cam_fps);
+		} else {
+			printf("format: %dx%d, %.1ffps\n", cfg->frame_width, cfg->frame_height, cfg->cam_fps);
+		}
+	} else {
+		printf("format7_%d: %dx%d\n", cfg->frame_mode, cfg->frame_width, cfg->frame_height);
 	}
-	else printf("format7_%d: %dx%d\n",cfg->frame_mode,cfg->frame_width,cfg->frame_height);
-	printf("calibration grid file:  '%s'\n",cfg->calib_grid_path);
+	if (cfg->cam_xoff != 0 || cfg->cam_yoff != 0) {
+		printf("offset: %dx%d\n", cfg->cam_xoff, cfg->cam_yoff);
+	}
+	printf("calibration grid file:  '%s'\n", cfg->calib_grid_path);
 }
 
 void CameraEngine::setMinMaxConfig(CameraConfig *cam_cfg, std::vector<CameraConfig> cfg_list) {

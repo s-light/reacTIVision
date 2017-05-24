@@ -117,6 +117,8 @@ struct CameraConfig {
 
     int cam_width;
     int cam_height;
+    int cam_xoff;
+    int cam_yoff;
     float cam_fps;
 
     int frame_width;

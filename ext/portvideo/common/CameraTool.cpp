@@ -26,7 +26,9 @@ char CameraTool::cam_cfg_path[1024];
 
 void CameraTool::printConfig(std::vector<CameraConfig> cfg_list) {
 
-	if(cfg_list.size()==0) return;
+	if(cfg_list.size() == 0) {
+		return;
+	}
 
 	int device = -1;
 	int width = -1;
@@ -38,38 +40,51 @@ void CameraTool::printConfig(std::vector<CameraConfig> cfg_list) {
 	for (int i=0;i<(int)cfg_list.size();i++) {
 
 		if (cfg_list[i].device != device) {
-			if (device>=0) printf("\b fps\n");
+			if (device >= 0) {
+				printf("\b fps\n");
+			}
 			device = cfg_list[i].device;
 			printf("  %d: %s\n",cfg_list[i].device,cfg_list[i].name);
 			format = -1;
 		}
 
 		if ((cfg_list[i].cam_format != format) || (cfg_list[i].frame_mode != frame_mode)) {
-			if (format>=0) printf("\b fps\n");
+			if (format >= 0) {
+				printf("\b fps\n");
+			}
 			format = cfg_list[i].cam_format;
-			if(cfg_list[i].frame_mode<0) printf("    format: %s",fstr[cfg_list[i].cam_format]);
-			else printf("    format7_%d: %s",cfg_list[i].frame_mode,fstr[cfg_list[i].cam_format]);
+			if(cfg_list[i].frame_mode < 0) {
+				printf("    format: %s",fstr[cfg_list[i].cam_format]);
+			} else {
+				printf("    format7_%d: %s",cfg_list[i].frame_mode,fstr[cfg_list[i].cam_format]);
+			}
 			//if(cfg_list[i].compress) printf(" (default)");
 			width = height = fps = -1;
 			printf("\n");
 		}
 
 		if ((cfg_list[i].cam_width != width) || (cfg_list[i].cam_height != height)) {
-			if (width>0) printf("\b fps\n");
+			if (width > 0) {
+				printf("\b fps\n");
+			}
 			printf("      %dx%d ",cfg_list[i].cam_width,cfg_list[i].cam_height);
 			width = cfg_list[i].cam_width;
 			height = cfg_list[i].cam_height;
 			fps = INT_MAX;
 		}
 
-		if (cfg_list[i].frame_mode>=0) printf("max|");
-		else if (cfg_list[i].cam_fps != fps) {
-			if(int(cfg_list[i].cam_fps)==cfg_list[i].cam_fps)
+		if (cfg_list[i].frame_mode >= 0) {
+			printf("max|");
+		} else if (cfg_list[i].cam_fps != fps) {
+			if(int(cfg_list[i].cam_fps) == cfg_list[i].cam_fps) {
 				printf("%d|",int(cfg_list[i].cam_fps));
-			else printf("%.1f|",cfg_list[i].cam_fps);
+			} else {
+				printf("%.1f|",cfg_list[i].cam_fps);
+			}
 			fps = cfg_list[i].cam_fps;
 		}
-	} printf("\b fps\n");
+	}
+	printf("\b fps\n");
 
 }
 
@@ -317,6 +332,8 @@ void CameraTool::initCameraConfig(CameraConfig *cfg) {
 
 	cfg->cam_width = SETTING_MAX;
 	cfg->cam_height = SETTING_MAX;
+	cfg->cam_xoff = 0;
+	cfg->cam_yoff = 0;
 	cfg->cam_fps = SETTING_MAX;
 
 	cfg->frame = false;
@@ -383,6 +400,8 @@ void CameraTool::setCameraConfig(CameraConfig *cfg) {
 
 	cam_cfg.cam_width = cfg->cam_width;
 	cam_cfg.cam_height = cfg->cam_height;
+	cam_cfg.cam_xoff = cfg->cam_xoff;
+    cam_cfg.cam_yoff = cfg->cam_yoff;
 	cam_cfg.cam_fps = cfg->cam_fps;
 
 	cam_cfg.frame = cfg->frame;
@@ -515,6 +534,16 @@ void CameraTool::readSettings(tinyxml2::XMLElement* camera_element, CameraConfig
 			else if (strcmp( image_element->Attribute("height"), "min" ) == 0) cam_cfg.cam_height = SETTING_MIN;
 			else cam_cfg.cam_height = atoi(image_element->Attribute("height"));
 		}
+		if (image_element->Attribute("xoff")!=NULL) {
+			if (strcmp( image_element->Attribute("xoff"), "max" ) == 0) cam_cfg.cam_xoff = SETTING_MAX;
+			else if (strcmp( image_element->Attribute("xoff"), "min" ) == 0) cam_cfg.cam_xoff = 0;
+			else cam_cfg.cam_xoff = atoi(image_element->Attribute("xoff"));
+		}
+		if (image_element->Attribute("yoff")!=NULL) {
+			if (strcmp( image_element->Attribute("yoff"), "max" ) == 0) cam_cfg.cam_yoff = SETTING_MAX;
+			else if (strcmp( image_element->Attribute("yoff"), "min" ) == 0) cam_cfg.cam_yoff = 0;
+			else cam_cfg.cam_yoff = atoi(image_element->Attribute("yoff"));
+		}
 		if (image_element->Attribute("fps")!=NULL) {
 			if (strcmp( image_element->Attribute("fps"), "max" ) == 0) cam_cfg.cam_fps = SETTING_MAX;
 			else if (strcmp( image_element->Attribute("fps"), "min" ) == 0) cam_cfg.cam_fps = SETTING_MIN;
@@ -638,7 +667,9 @@ void CameraTool::saveSettings() {
 
     saveSettings(cam_cfg, camera_element);
 	xml_settings.SaveFile(cam_cfg_path);
-	if (xml_settings.Error()) std::cout << "Error saving camera configuration file: "  << cam_cfg_path << std::endl;
+	if (xml_settings.Error()) {
+		std::cout << "Error saving camera configuration file: "  << cam_cfg_path << std::endl;
+	}
 }
 
 void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camera_element)
@@ -652,6 +683,8 @@ void CameraTool::saveSettings(CameraConfig& cam_cfg, tinyxml2::XMLElement* camer
 	image_element->SetAttribute("format",fstr[cam_cfg.cam_format]);
 	image_element->SetAttribute("width",cam_cfg.cam_width);
 	image_element->SetAttribute("height",cam_cfg.cam_height);
+	image_element->SetAttribute("xoff",cam_cfg.cam_xoff);
+	image_element->SetAttribute("yoff",cam_cfg.cam_yoff);
 	image_element->SetAttribute("fps",cam_cfg.cam_fps);
 	if (cam_cfg.color) {
 		image_element->SetAttribute("color","true");
