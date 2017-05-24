@@ -215,6 +215,8 @@ public:
     int getFps() { return (int)floor(cfg->cam_fps+0.5f); }
     int getWidth() { return cfg->frame_width; }
     int getHeight() { return cfg->frame_height; }
+    int getXOff() { return cfg->cam_xoff; }
+    int getYOff() { return cfg->cam_yoff; }
     int getFormat() { return cfg->buf_format; }
     char* getName() { return cfg->name; }
 

@@ -79,12 +79,12 @@ std::vector<CameraConfig> MultiCamera::getCameraConfigs(std::vector<CameraConfig
             cfg.cam_height = first_child_in_grp.cam_height * cols;
             cfg.cam_fps = first_child_in_grp.cam_fps;
             cfg.cam_format = first_child_in_grp.cam_format;
-            
+
             cfg.childs.insert(cfg.childs.end(), (*iter_grp).begin(), (*iter_grp).end());
             cfg_list.push_back(cfg);
         }
     }
-    
+
     return cfg_list;
 }
 
@@ -94,7 +94,7 @@ CameraEngine* MultiCamera::getCamera(CameraConfig* cam_cfg)
 	return cam;
 }
 
-MultiCamera::MultiCamera(CameraConfig *cam_cfg) : CameraEngine(cam_cfg) 
+MultiCamera::MultiCamera(CameraConfig *cam_cfg) : CameraEngine(cam_cfg)
 {
     std::vector<CameraConfig>::iterator iter;
     for(iter = cam_cfg->childs.begin(); iter != cam_cfg->childs.end(); iter++)
@@ -108,11 +108,11 @@ MultiCamera::MultiCamera(CameraConfig *cam_cfg) : CameraEngine(cam_cfg)
 }
 
 MultiCamera::~MultiCamera() {
-	
+
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 		delete *iter;
-	
+
 	if (cam_buffer)
 	{
 		delete[] cam_buffer;
@@ -123,7 +123,7 @@ MultiCamera::~MultiCamera() {
 void MultiCamera::printInfo()
 {
 	printf("Multicam: %i childs\n", (int)cameras_.size());
-	
+
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 	{
@@ -141,15 +141,15 @@ bool MultiCamera::initCamera()
     }
 
     CameraConfig first_cfg = *cfg->childs.begin();
-    cameras_columns_ = cfg->cam_width / first_cfg.cam_width;
-    cameras_rows_ = cfg->cam_height / first_cfg.cam_height;
+    // cameras_columns_ = cfg->cam_width / first_cfg.cam_width;
+    // cameras_rows_ = cfg->cam_height / first_cfg.cam_height;
+    //
+    // if(cameras_columns_ * cameras_rows_ != cfg->childs.size())
+    // {
+    //     std::cout << "bad multicam layout" << std::endl;
+    //     return false;
+    // }
 
-    if(cameras_columns_ * cameras_rows_ != cfg->childs.size())
-    {
-        std::cout << "bad multicam layout" << std::endl;
-        return false;
-    }
-	
 	std::vector<CameraConfig>::iterator iter;
     for(iter = cfg->childs.begin(); iter != cfg->childs.end(); iter++)
     {
@@ -188,21 +188,26 @@ bool MultiCamera::initCamera()
 			std::cout << "error creating child cam" << child_cfg->device << std::endl;
 			return false;
 		}
-		
+
 		if(!cam->initCamera())
 		{
 			delete cam;
 			return false;
 		}
-		
+
         cameras_.push_back(cam);
 	}
 
 	cfg->frame = false;
 	setupFrame();
-	
-	if(!cam_buffer)
-		cam_buffer = new unsigned char[cfg->frame_height * cfg->frame_width * cfg->buf_format];
+
+	if(!cam_buffer) {
+        // define canvas buffer size
+        const int buffer_size = cfg->frame_height * cfg->frame_width * cfg->buf_format;
+        cam_buffer = new unsigned char[buffer_size];
+        // clear cavas buffer
+        memset(cam_buffer, 0, buffer_size);
+    }
 
 	return true;
 }
@@ -210,105 +215,127 @@ bool MultiCamera::initCamera()
 bool MultiCamera::closeCamera()
 {
 	bool result = true;
-	
+
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 	{
 		if((*iter) == NULL) continue;
-		
+
 		result &= (*iter)->closeCamera();
 	}
-	
+
 	if(cam_buffer)
 	{
 		delete[] cam_buffer;
 		cam_buffer = NULL;
 	}
-	
+
 	return result;
 }
 
 bool MultiCamera::startCamera()
 {
 	bool result = true;
-	
+
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 		result &= (*iter)->startCamera();
-	
+
 	if(!result)
 		stopCamera();
-	
+
 	running = result;
-	
+
 	return result;
 }
 
 bool MultiCamera::stopCamera()
 {
 	bool result = true;
-	
+
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 		result &= (*iter)->stopCamera();
-	
+
 	running = !result;
-	
+
 	return result;
 }
 
 bool MultiCamera::resetCamera()
 {
 	bool result = true;
-	
+
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 		result &= (*iter)->resetCamera();
-	
+
 	return result;
 }
 
 unsigned char* MultiCamera::getFrame()
 {
 	std::vector<CameraEngine*>::iterator iter;
-	unsigned char* childcam_buffer_start = cam_buffer;
-	int grid_column = 0;
-	int grid_row = 0;
+
+    // cam_buffer points to a buffer the size of the main image frame.
+    // cfg->frame_height * cfg->frame_width * cfg->buf_format
+	// unsigned char* childcam_buffer_start = cam_buffer;
+
+    int cam_buffer_line_size = cfg->frame_width * cfg->buf_format;
+
+    // for every child cam
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
 	{
+        // get current child cam
 		CameraEngine* cam = *iter;
-		
-		int line_size = cam->getWidth() * cam->getFormat();
-		
-		unsigned char* buffer_write = childcam_buffer_start;
-		unsigned char* child_frame = cam->getFrame();
+
+        unsigned char* child_frame = cam->getFrame();
 		if(child_frame == NULL)
 		{
 			this->running = false;
 			return NULL;
 		}
-		
-		for(int i = 0; i < cam->getHeight(); i++)
+
+        const int xoff = cam->getXOff();
+        const int yoff = cam->getYOff();
+
+        const int xoff_b = xoff * cfg->buf_format;
+
+
+        const int cam_line_size = cam->getWidth() * cam->getFormat();
+        int line_size = cam_line_size;
+        // check and restrict right bound of cam_buffer image
+        if ((xoff + cam->getWidth()) > cfg->frame_width) {
+            // image of child cam overflows right border of canvas
+            // so we restrict to canvas area
+            line_size = (cfg->frame_width - xoff) * cam->getFormat();
+        }
+
+        // check and restrict bottom bound of canvas
+        int line_count = cam->getHeight();
+        if (yoff + cam->getHeight() > cfg->frame_height) {
+            line_count = cfg->frame_height - yoff;
+        }
+
+        // for every line of the cam height
+		for(int line_index = 0; line_index < line_count; line_index++)
 		{
-			memcpy(buffer_write, child_frame, line_size);
-			child_frame += line_size;
-			buffer_write += line_size * cameras_columns_;
+            // find start position in cam_buffer
+            unsigned char* buffer_write_start = (
+                cam_buffer +
+                ((yoff + line_index) * cam_buffer_line_size) +
+                xoff_b
+            );
+
+            // copy line
+			memcpy(buffer_write_start, child_frame, line_size);
+
+            // set child_frame pointer to next child line
+			child_frame += cam_line_size;
 		}
-		
-		if(cameras_columns_ <= 1 || grid_column == cameras_columns_ - 1)
-		{
-			grid_column = 0;
-			grid_row++;
-			childcam_buffer_start = cam_buffer + cam->getWidth() * cameras_columns_ * cam->getHeight() * grid_row * cam->getFormat();
-		}
-		else
-		{
-			grid_column++;
-			childcam_buffer_start += line_size;
-		}
-			
+
 	}
-	
+
 	return cam_buffer;
 }
 
@@ -321,7 +348,7 @@ int MultiCamera::getDefaultCameraSetting(int mode) { return cameras_[0]->getDefa
 bool MultiCamera::hasCameraSetting(int mode) { return cameras_[0]->hasCameraSetting(mode); }
 bool MultiCamera::hasCameraSettingAuto(int mode) { return cameras_[0]->hasCameraSettingAuto(mode); }
 
-bool MultiCamera::setCameraSettingAuto(int mode, bool flag) 
+bool MultiCamera::setCameraSettingAuto(int mode, bool flag)
 {
 	bool result = true;
 	std::vector<CameraEngine*>::iterator iter;
@@ -331,7 +358,7 @@ bool MultiCamera::setCameraSettingAuto(int mode, bool flag)
 }
 
 bool MultiCamera::setCameraSetting(int mode, int value)
-{ 
+{
 	bool result = true;
 	std::vector<CameraEngine*>::iterator iter;
 	for(iter = cameras_.begin(); iter != cameras_.end(); iter++)
