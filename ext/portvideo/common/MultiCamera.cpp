@@ -160,17 +160,17 @@ bool MultiCamera::initCamera()
             return false;
         }
 
-        if(child_cfg->cam_height != first_cfg.cam_height)
-        {
-            std::cout << "bad multicam layout: different heights per child" << std::endl;
-            return false;
-        }
-
-        if(child_cfg->cam_width != first_cfg.cam_width)
-        {
-            std::cout << "bad multicam layout: different widths per child" << std::endl;
-            return false;
-        }
+        // if(child_cfg->cam_height != first_cfg.cam_height)
+        // {
+        //     std::cout << "bad multicam layout: different heights per child" << std::endl;
+        //     return false;
+        // }
+        //
+        // if(child_cfg->cam_width != first_cfg.cam_width)
+        // {
+        //     std::cout << "bad multicam layout: different widths per child" << std::endl;
+        //     return false;
+        // }
 
         if(child_cfg->cam_format != first_cfg.cam_format)
         {
@@ -301,11 +301,11 @@ unsigned char* MultiCamera::getFrame()
 
         // const int xoff_b = xoff * cfg->buf_format;
 
-        int child_x_start = 0;
-        // check and restrict left bound of canvas
-        if (xoff < 0) {
-            child_x_start = xoff * -1;
-        }
+        // int child_x_start = 0;
+        // // check and restrict left bound of canvas
+        // if (xoff < 0) {
+        //     child_x_start = xoff * -1;
+        // }
 
         int child_y_start = 0;
         // check and restrict top bound of canvas
